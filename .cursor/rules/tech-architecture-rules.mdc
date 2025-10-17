@@ -1,0 +1,846 @@
+# 技术架构规则 - 遗忘的像素魔法大陆
+
+> 本规则定义项目的技术实现标准，所有代码必须遵循此规则
+
+---
+
+## 🏗️ 技术栈标准（不可更改）
+
+### 核心技术
+- **构建工具**: Vite 5.x（必须）
+- **游戏引擎**: Phaser 3.80+（必须）
+- **开发语言**: TypeScript 5.x（必须）
+- **UI框架**: React 18（仅UI界面）
+- **状态管理**: Zustand（轻量高效）
+- **样式方案**: TailwindCSS（UI部分）
+
+### 后端（可选）
+- **服务器**: Node.js + Express
+- **数据库**: SQLite（本地）或 PostgreSQL（云端）
+- **部署**: Vercel（前端）+ Railway（后端）
+
+---
+
+## 📂 项目结构规范（必须严格遵守）
+
+```
+src/
+├── game/                    # Phaser游戏核心（不要混入React）
+│   ├── scenes/              # 游戏场景
+│   ├── entities/            # 游戏实体（Player, Enemy等）
+│   ├── systems/             # 游戏系统（Combat, Fog, AI等）
+│   ├── managers/            # 管理器（Resource, Event, Audio）
+│   └── utils/               # 工具函数
+│
+├── ui/                      # React UI组件（不要混入游戏逻辑）
+│   ├── components/          # UI组件
+│   └── hooks/               # React Hooks
+│
+├── store/                   # Zustand状态管理
+│   ├── gameStore.ts         # 游戏全局状态
+│   ├── playerStore.ts       # 玩家状态
+│   └── uiStore.ts           # UI状态
+│
+├── types/                   # TypeScript类型定义
+├── constants/               # 常量配置
+└── services/                # 外部服务
+
+public/
+├── assets/                  # 游戏资源
+│   ├── sprites/             # 精灵图
+│   ├── tilesets/            # 地图贴图
+│   ├── audio/               # 音频
+│   └── ui/                  # UI资源
+└── data/                    # 配置数据（JSON）
+```
+
+### 目录职责（严格分离）
+- `game/` - 纯游戏逻辑，不依赖React
+- `ui/` - 纯UI组件，不包含游戏逻辑
+- `store/` - 状态管理，连接game和ui
+- `types/` - 全局类型定义
+- `constants/` - 配置常量（数值平衡）
+
+---
+
+## 🎮 Phaser配置标准
+
+### 必须配置项
+
+```typescript
+const config: Phaser.Types.Core.GameConfig = {
+  type: Phaser.AUTO,
+  width: 1280,
+  height: 720,
+  parent: 'game-container',
+  backgroundColor: '#2d2d2d',
+  
+  // 像素游戏必须开启
+  pixelArt: true,
+  antialias: false,
+  roundPixels: true,
+  
+  // 物理引擎配置
+  physics: {
+    default: 'arcade',
+    arcade: {
+      gravity: { x: 0, y: 0 }, // 俯视角无重力
+      debug: process.env.NODE_ENV === 'development',
+    },
+  },
+  
+  // 场景配置
+  scene: [BootScene, MenuScene, GameScene, UIScene],
+  
+  // 自适应配置
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+};
+```
+
+### 禁止配置
+- ❌ `antialias: true` - 会导致像素模糊
+- ❌ `roundPixels: false` - 会导致抖动
+- ❌ 不要使用非整数倍缩放
+
+---
+
+## 🏛️ 核心系统架构规范
+
+### 1. 场景（Scene）规范
+
+#### 必须的场景
+- **BootScene** - 预加载场景（加载核心资源）
+- **MenuScene** - 主菜单场景
+- **GameScene** - 主游戏场景
+- **UIScene** - UI覆盖层（生命条、技能栏）
+
+#### 场景生命周期
+```typescript
+class GameScene extends Phaser.Scene {
+  preload() {
+    // 加载资源
+  }
+  
+  create() {
+    // 初始化游戏对象
+    // 创建系统（FogSystem, CombatSystem等）
+    // 设置事件监听
+  }
+  
+  update(time: number, delta: number) {
+    // 每帧更新
+    // 更新系统
+  }
+}
+```
+
+#### 场景通信规则
+- 使用 `this.scene.start/stop/pause/resume()` 切换场景
+- 使用事件系统通信（不要直接引用）
+- 数据通过 `this.scene.get()` 或 Zustand传递
+
+### 2. 实体（Entity）规范
+
+#### 玩家实体
+```typescript
+export class Player extends Phaser.Physics.Arcade.Sprite {
+  // 必须属性
+  private health: number;
+  private maxHealth: number;
+  private mana: number;
+  private maxMana: number;
+  private speed: number;
+  
+  // 必须方法
+  update(time: number, delta: number): void;
+  takeDamage(amount: number): void;
+  heal(amount: number): void;
+  castSkill(skillId: string): void;
+}
+```
+
+#### 敌人实体
+```typescript
+export class Enemy extends Phaser.Physics.Arcade.Sprite {
+  // 必须属性
+  private health: number;
+  private aiState: 'idle' | 'patrol' | 'chase' | 'attack';
+  
+  // 必须方法
+  update(time: number, delta: number): void;
+  updateAI(): void;
+  takeDamage(amount: number): void;
+}
+```
+
+#### 实体规范
+- 必须继承 `Phaser.Physics.Arcade.Sprite`
+- 必须实现 `update()` 方法
+- 属性使用 private/protected（封装）
+- 不要在实体内处理UI更新（通过事件）
+
+### 3. 系统（System）规范
+
+#### 必须实现的系统
+1. **FogSystem** - 迷雾系统
+2. **CombatSystem** - 战斗系统
+3. **MagicSystem** - 魔法系统
+4. **AISystem** - AI系统
+5. **InventorySystem** - 背包系统
+6. **QuestSystem** - 任务系统
+7. **SaveSystem** - 存档系统
+
+#### 系统标准接口
+```typescript
+export class GameSystem {
+  protected scene: Phaser.Scene;
+  
+  constructor(scene: Phaser.Scene) {
+    this.scene = scene;
+    this.init();
+  }
+  
+  protected init(): void {
+    // 初始化系统
+  }
+  
+  update(time: number, delta: number): void {
+    // 每帧更新
+  }
+  
+  destroy(): void {
+    // 清理资源
+  }
+}
+```
+
+#### 系统规范
+- 系统必须独立，低耦合
+- 通过事件系统通信（不直接引用其他系统）
+- 必须实现 `update()` 和 `destroy()` 方法
+- 不要在系统内直接操作DOM
+
+### 4. 管理器（Manager）规范
+
+#### ResourceManager
+```typescript
+export class ResourceManager {
+  private loadedAssets: Set<string>;
+  
+  preloadCore(): void;              // 预加载核心资源
+  loadArea(areaId: string): void;   // 按需加载区域
+  unloadArea(areaId: string): void; // 卸载不用的资源
+}
+```
+
+#### EventManager（单例）
+```typescript
+export class EventManager {
+  private static instance: EventManager;
+  
+  static getInstance(): EventManager;
+  emit(event: string, ...args: any[]): void;
+  on(event: string, callback: Function): void;
+  off(event: string, callback?: Function): void;
+}
+```
+
+#### AudioManager
+```typescript
+export class AudioManager {
+  playMusic(key: string, volume?: number): void;
+  playSFX(key: string, volume?: number): void;
+  stopMusic(): void;
+  setMusicVolume(volume: number): void;
+  setSFXVolume(volume: number): void;
+}
+```
+
+---
+
+## 🎯 核心系统实现规范
+
+### 迷雾系统（FogSystem）
+
+```typescript
+export class FogSystem {
+  private fogLayer: Phaser.GameObjects.RenderTexture;
+  private exploredMap: Set<string>;
+  
+  // 必须实现
+  clearFog(x: number, y: number, radius: number): void;
+  regenerateFog(x: number, y: number, radius: number): void;
+  isExplored(x: number, y: number): boolean;
+  update(time: number, delta: number): void;
+}
+```
+
+**实现要求**:
+- 使用 `RenderTexture` 实现迷雾遮罩
+- 支持圆形/矩形净化区域
+- 记录已探索区域（用于小地图）
+- 支持动态再生（高级功能）
+
+### 魔法系统（MagicSystem）
+
+```typescript
+interface Skill {
+  id: string;
+  name: string;
+  element: 'fire' | 'ice' | 'thunder' | 'nature';
+  manaCost: number;
+  cooldown: number;
+  effect: (target: Vector2) => void;
+}
+
+export class MagicSystem {
+  private skills: Map<string, Skill>;
+  private cooldowns: Map<string, number>;
+  
+  // 必须实现
+  castSkill(skillId: string, target: Vector2): boolean;
+  isOnCooldown(skillId: string): boolean;
+  tryFusion(skill1: string, skill2: string): string | null;
+}
+```
+
+**实现要求**:
+- 技能从JSON配置加载
+- 检查魔力和冷却
+- 创建投射物或特效
+- 支持魔法融合（高级功能）
+
+### AI系统（AISystem）
+
+```typescript
+export class AISystem {
+  updateEnemyAI(enemy: Enemy, player: Player, time: number): void;
+  
+  // AI状态
+  private patrol(enemy: Enemy): void;
+  private chase(enemy: Enemy, target: Vector2): void;
+  private attack(enemy: Enemy, target: Vector2): void;
+}
+```
+
+**实现要求**:
+- 使用状态机（idle/patrol/chase/attack）
+- 支持寻路（A*算法）
+- 视野检测（用于发现玩家）
+- 视野外暂停AI（性能优化）
+
+---
+
+## 📦 状态管理规范（Zustand）
+
+### Store结构标准
+
+```typescript
+// src/store/gameStore.ts
+interface GameState {
+  // 状态
+  isPlaying: boolean;
+  isPaused: boolean;
+  
+  // 数据
+  player: PlayerData;
+  inventory: InventoryData;
+  quests: Quest[];
+  
+  // Actions
+  startGame: () => void;
+  pauseGame: () => void;
+  saveGame: () => void;
+  loadGame: (data: SaveData) => void;
+}
+
+export const useGameStore = create<GameState>()(
+  immer((set, get) => ({
+    // 初始状态
+    isPlaying: false,
+    
+    // Actions实现
+    startGame: () => set({ isPlaying: true }),
+    // ...
+  }))
+);
+```
+
+### Store使用规范
+- 使用 `immer` 中间件（简化不可变更新）
+- Actions必须纯函数（不要有副作用）
+- 复杂逻辑放在系统层，Store只存状态
+- React组件用 `useGameStore` 订阅
+- Phaser通过事件更新Store（解耦）
+
+---
+
+## ⚡ 性能优化规范（必须遵守）
+
+### 1. 对象池（Object Pool）
+
+**必须使用对象池的情况**:
+- 投射物（火球、箭矢等）
+- 粒子效果
+- 频繁创建的敌人
+
+```typescript
+export class ObjectPool<T> {
+  private pool: T[] = [];
+  
+  get(): T;
+  release(obj: T): void;
+}
+```
+
+### 2. 视野剔除（Culling）
+
+```typescript
+export class CullingSystem {
+  update(): void {
+    const bounds = this.camera.worldView;
+    
+    for (const entity of this.entities) {
+      const inView = Phaser.Geom.Rectangle.Overlaps(
+        bounds,
+        entity.getBounds()
+      );
+      
+      entity.setActive(inView);
+      if (!inView) entity.pauseAI?.();
+    }
+  }
+}
+```
+
+**规则**:
+- 视野外的实体暂停更新
+- 敌人AI在视野外停止
+- 使用 `setActive(false)` 而不是 `destroy()`
+
+### 3. 资源管理
+
+**按需加载策略**:
+- 核心资源在BootScene加载
+- 区域资源进入时加载
+- 离开区域时卸载资源
+
+```typescript
+await this.load.start(); // 异步加载
+this.textures.remove(key); // 卸载纹理
+```
+
+### 4. 纹理图集（必须使用）
+
+```json
+// 使用TexturePacker合成图集
+{
+  "frames": {
+    "player-0": { "frame": {"x":0,"y":0,"w":16,"h":24} },
+    "enemy-0": { "frame": {"x":16,"y":0,"w":16,"h":16} }
+  }
+}
+```
+
+**规则**:
+- 相关精灵打包成图集
+- 减少纹理切换（提升性能）
+- 使用压缩格式（WebP）
+
+### 5. 性能目标
+
+- **FPS**: 稳定60FPS
+- **内存**: <500MB
+- **加载时间**: 核心资源<3秒
+- **屏幕实体**: <200个
+
+---
+
+## 💾 数据存储规范
+
+### 本地存储（LocalStorage）
+
+```typescript
+export class SaveSystem {
+  private static SAVE_KEY = 'game-save';
+  
+  static save(data: SaveData): void {
+    localStorage.setItem(this.SAVE_KEY, JSON.stringify(data));
+  }
+  
+  static load(): SaveData | null {
+    const saved = localStorage.getItem(this.SAVE_KEY);
+    return saved ? JSON.parse(saved) : null;
+  }
+}
+```
+
+**存储内容**:
+- 玩家数据（等级、技能、装备）
+- 背包内容
+- 任务进度
+- 已探索区域
+- 游戏设置
+
+### 数据格式标准
+
+```typescript
+interface SaveData {
+  version: string;           // 存档版本
+  timestamp: number;         // 保存时间
+  player: PlayerData;        // 玩家数据
+  inventory: InventoryData;  // 背包
+  progress: ProgressData;    // 进度
+  settings: SettingsData;    // 设置
+}
+```
+
+**版本管理**:
+- 每次更新增加版本号
+- 实现存档迁移逻辑
+- 向后兼容旧存档
+
+---
+
+## 🎨 资源规范
+
+### 命名规范
+
+```
+sprites/
+  player/
+    player-walk-down-0.png
+    player-walk-down-1.png
+    player-attack-0.png
+  enemies/
+    slime-idle-0.png
+    slime-move-0.png
+  
+audio/
+  music/
+    village.mp3
+    forest.mp3
+  sfx/
+    attack.wav
+    step.wav
+```
+
+**命名格式**:
+- `{category}-{action}-{variant}-{frame}.ext`
+- 全小写，用连字符分隔
+- 帧编号从0开始
+
+### 资源路径
+
+```typescript
+// 正确：使用绝对路径
+this.load.image('player', '/assets/sprites/player.png');
+
+// 错误：相对路径
+this.load.image('player', './assets/sprites/player.png');
+```
+
+### 资源优化
+
+- **图片**: WebP格式，压缩
+- **音频**: MP3（音乐）, WAV（音效）
+- **JSON**: 压缩（去除空格）
+
+---
+
+## 🧪 测试规范
+
+### 单元测试（Vitest）
+
+```typescript
+// tests/unit/MagicSystem.test.ts
+describe('MagicSystem', () => {
+  it('should cast skill when mana sufficient', () => {
+    const magic = new MagicSystem(mockScene, mockPlayer);
+    expect(magic.castSkill('fireball', target)).toBe(true);
+  });
+  
+  it('should not cast when on cooldown', () => {
+    magic.castSkill('fireball', target);
+    expect(magic.castSkill('fireball', target)).toBe(false);
+  });
+});
+```
+
+**必须测试**:
+- 核心系统逻辑（战斗、魔法、AI）
+- 数据存储和加载
+- 状态管理（Zustand）
+
+### 集成测试
+
+```typescript
+describe('Combat Integration', () => {
+  it('player damages enemy on hit', () => {
+    const scene = createMockScene();
+    const player = new Player(scene, 0, 0);
+    const enemy = new Enemy(scene, 50, 50);
+    
+    player.attack(enemy);
+    expect(enemy.health).toBeLessThan(enemy.maxHealth);
+  });
+});
+```
+
+---
+
+## 📏 代码规范
+
+### TypeScript规范
+
+```typescript
+// 必须：使用严格模式
+{
+  "strict": true,
+  "noUnusedLocals": true,
+  "noUnusedParameters": true
+}
+
+// 必须：定义类型
+interface Player {
+  health: number;
+  mana: number;
+}
+
+// 不要：使用any
+const data: any = {}; // ❌
+
+// 应该：使用具体类型
+const data: PlayerData = {}; // ✅
+```
+
+### 命名规范
+
+```typescript
+// 类：PascalCase
+class GameScene {}
+
+// 接口：PascalCase，I前缀可选
+interface PlayerData {}
+
+// 变量/函数：camelCase
+const playerHealth = 100;
+function updatePlayer() {}
+
+// 常量：UPPER_SNAKE_CASE
+const MAX_HEALTH = 100;
+
+// 私有属性：前缀_（可选）
+private _internalState = 0;
+```
+
+### 文件规范
+
+```typescript
+// 单一职责：一个文件一个类/系统
+// ✅ Player.ts
+export class Player {}
+
+// ✅ CombatSystem.ts
+export class CombatSystem {}
+
+// ❌ GameEntities.ts (包含多个类)
+```
+
+---
+
+## 🚀 部署规范
+
+### 构建配置
+
+```typescript
+// vite.config.ts
+export default defineConfig({
+  build: {
+    target: 'esnext',
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          phaser: ['phaser'],
+          react: ['react', 'react-dom'],
+        },
+      },
+    },
+  },
+});
+```
+
+### 环境变量
+
+```bash
+# .env.development
+VITE_API_URL=http://localhost:3001
+VITE_DEBUG=true
+
+# .env.production
+VITE_API_URL=https://api.example.com
+VITE_DEBUG=false
+```
+
+### 部署检查清单
+
+- [ ] 生产构建成功
+- [ ] 资源正确加载
+- [ ] 性能达标（60FPS）
+- [ ] 存档系统正常
+- [ ] 不同屏幕尺寸测试
+- [ ] 浏览器兼容性测试
+
+---
+
+## 🛠️ 开发工具配置
+
+### VSCode配置
+
+```json
+// .vscode/settings.json
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  }
+}
+```
+
+### ESLint配置
+
+```json
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "rules": {
+    "no-console": "warn",
+    "@typescript-eslint/no-unused-vars": "error"
+  }
+}
+```
+
+---
+
+## 🔒 安全规范
+
+### 不要暴露的信息
+- ❌ API密钥
+- ❌ 数据库连接字符串
+- ❌ 用户敏感数据
+
+### 输入验证
+```typescript
+// 必须验证用户输入
+function loadSave(data: unknown) {
+  if (!isValidSaveData(data)) {
+    throw new Error('Invalid save data');
+  }
+  // 继续处理
+}
+```
+
+---
+
+## 📊 监控与调试
+
+### Debug模式
+
+```typescript
+export class DebugPanel {
+  update(player: Player) {
+    this.text.setText([
+      `FPS: ${Math.round(this.scene.game.loop.actualFps)}`,
+      `Player: (${player.x}, ${player.y})`,
+      `Health: ${player.health}/${player.maxHealth}`,
+      `Entities: ${this.scene.children.length}`,
+    ]);
+  }
+}
+```
+
+### 性能监控
+
+```typescript
+// 帧率监控
+const fps = this.game.loop.actualFps;
+if (fps < 50) {
+  console.warn('Low FPS detected:', fps);
+}
+
+// 内存监控（Chrome）
+if (performance.memory) {
+  const mb = performance.memory.usedJSHeapSize / 1048576;
+  console.log('Memory usage:', mb.toFixed(2), 'MB');
+}
+```
+
+---
+
+## ✅ 代码审查清单
+
+### 提交前检查
+- [ ] TypeScript类型无错误
+- [ ] ESLint无警告
+- [ ] 单元测试通过
+- [ ] 性能无明显下降
+- [ ] 代码符合规范
+- [ ] 添加必要注释
+- [ ] 更新相关文档
+
+### 性能检查
+- [ ] 无内存泄漏
+- [ ] 帧率稳定
+- [ ] 资源正确释放
+- [ ] 使用对象池
+- [ ] 实现视野剔除
+
+---
+
+## 🚫 常见错误（禁止）
+
+### Phaser使用
+- ❌ 在React组件中直接操作游戏对象
+- ❌ 在游戏循环中操作DOM
+- ❌ 忘记销毁不用的对象
+- ❌ 使用相对路径加载资源
+- ❌ 不使用对象池频繁创建对象
+
+### TypeScript
+- ❌ 使用 `any` 类型
+- ❌ 忽略类型错误（使用 `@ts-ignore`）
+- ❌ 不定义接口
+
+### React
+- ❌ 在组件中包含游戏逻辑
+- ❌ 直接修改store状态
+- ❌ 过度渲染（未使用memo/useMemo）
+
+---
+
+## 📚 参考资源
+
+### 官方文档
+- Phaser 3: https://photonstorm.github.io/phaser3-docs/
+- Vite: https://vitejs.dev/
+- Zustand: https://zustand-demo.pmnd.rs/
+- TypeScript: https://www.typescriptlang.org/
+
+### 最佳实践
+- Game Programming Patterns: https://gameprogrammingpatterns.com/
+- Phaser Examples: https://labs.phaser.io/
+
+---
+
+**规则版本**: v1.0  
+**最后更新**: 2025-10-15  
+**状态**: 活跃
+
+所有代码提交必须符合此技术架构规则。如有疑问，参考官方文档或提出讨论。
