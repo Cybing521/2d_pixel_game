@@ -1,0 +1,81 @@
+{
+  "enemies": [
+    {
+      "id": "fog_wisp",
+      "name": "迷雾幽灵",
+      "type": "basic",
+      "health": 30,
+      "attack": 5,
+      "defense": 2,
+      "speed": 50,
+      "aiType": "patrol",
+      "expReward": 10,
+      "dropTable": [
+        {
+          "itemId": "wisp_essence",
+          "chance": 0.5,
+          "quantity": 1
+        },
+        {
+          "itemId": "small_potion",
+          "chance": 0.3,
+          "quantity": 1
+        }
+      ],
+      "sprite": "fog_wisp"
+    },
+    {
+      "id": "shadow_wolf",
+      "name": "暗影之狼",
+      "type": "aggressive",
+      "health": 50,
+      "attack": 10,
+      "defense": 5,
+      "speed": 80,
+      "aiType": "aggressive",
+      "expReward": 20,
+      "dropTable": [
+        {
+          "itemId": "wolf_fang",
+          "chance": 0.4,
+          "quantity": 1
+        },
+        {
+          "itemId": "leather",
+          "chance": 0.6,
+          "quantity": 2
+        }
+      ],
+      "sprite": "shadow_wolf"
+    },
+    {
+      "id": "corrupted_knight",
+      "name": "堕落骑士",
+      "type": "elite",
+      "health": 100,
+      "attack": 15,
+      "defense": 10,
+      "speed": 60,
+      "aiType": "defensive",
+      "expReward": 50,
+      "dropTable": [
+        {
+          "itemId": "rusty_sword",
+          "chance": 0.2,
+          "quantity": 1
+        },
+        {
+          "itemId": "knight_armor",
+          "chance": 0.15,
+          "quantity": 1
+        },
+        {
+          "itemId": "gold_coin",
+          "chance": 0.8,
+          "quantity": 10
+        }
+      ],
+      "sprite": "corrupted_knight"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "items": [
+    {
+      "id": "small_potion",
+      "name": "小型治疗药水",
+      "description": "恢复30点生命值",
+      "type": "consumable",
+      "rarity": "common",
+      "stackable": true,
+      "maxStack": 99,
+      "effect": {
+        "type": "heal",
+        "value": 30
+      },
+      "icon": "potion_small"
+    },
+    {
+      "id": "mana_potion",
+      "name": "魔力药水",
+      "description": "恢复50点魔力值",
+      "type": "consumable",
+      "rarity": "common",
+      "stackable": true,
+      "maxStack": 99,
+      "effect": {
+        "type": "restore_mana",
+        "value": 50
+      },
+      "icon": "potion_mana"
+    },
+    {
+      "id": "rusty_sword",
+      "name": "生锈的剑",
+      "description": "一把老旧的铁剑，虽然生锈但仍能使用",
+      "type": "weapon",
+      "rarity": "common",
+      "stackable": false,
+      "maxStack": 1,
+      "stats": {
+        "attack": 8
+      },
+      "icon": "sword_rusty"
+    },
+    {
+      "id": "leather_armor",
+      "name": "皮革护甲",
+      "description": "简单的皮革护甲，提供基础防护",
+      "type": "armor",
+      "rarity": "common",
+      "stackable": false,
+      "maxStack": 1,
+      "stats": {
+        "defense": 5,
+        "maxHealth": 10
+      },
+      "icon": "armor_leather"
+    },
+    {
+      "id": "fire_crystal",
+      "name": "火焰水晶",
+      "description": "蕴含火元素能量的魔法水晶",
+      "type": "material",
+      "rarity": "rare",
+      "stackable": true,
+      "maxStack": 50,
+      "icon": "crystal_fire"
+    },
+    {
+      "id": "ancient_key",
+      "name": "古老的钥匙",
+      "description": "看起来能打开某个古老遗迹的大门",
+      "type": "quest",
+      "rarity": "epic",
+      "stackable": false,
+      "maxStack": 1,
+      "icon": "key_ancient"
+    }
+  ]
+}

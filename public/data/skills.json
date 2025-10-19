@@ -1,0 +1,59 @@
+{
+  "skills": [
+    {
+      "id": "fireball",
+      "name": "火球术",
+      "description": "发射一个火球，对单个敌人造成火焰伤害",
+      "element": "fire",
+      "manaCost": 10,
+      "cooldown": 1000,
+      "damage": 20,
+      "radius": 0,
+      "duration": 0,
+      "unlockLevel": 1,
+      "icon": "fireball_icon"
+    },
+    {
+      "id": "frostnova",
+      "name": "冰霜新星",
+      "description": "在周围释放冰霜能量，冻结并伤害范围内的敌人",
+      "element": "ice",
+      "manaCost": 15,
+      "cooldown": 3000,
+      "damage": 15,
+      "radius": 100,
+      "duration": 2000,
+      "effect": "slow",
+      "unlockLevel": 5,
+      "icon": "frostnova_icon"
+    },
+    {
+      "id": "lightning",
+      "name": "雷霆一击",
+      "description": "召唤闪电链，可以在多个敌人间跳跃",
+      "element": "thunder",
+      "manaCost": 20,
+      "cooldown": 2000,
+      "damage": 25,
+      "radius": 150,
+      "duration": 0,
+      "effect": "chain",
+      "unlockLevel": 10,
+      "icon": "lightning_icon"
+    },
+    {
+      "id": "earthquake",
+      "name": "地震术",
+      "description": "震动大地，对大范围敌人造成伤害并击晕",
+      "element": "nature",
+      "manaCost": 30,
+      "cooldown": 5000,
+      "damage": 30,
+      "radius": 200,
+      "duration": 1500,
+      "effect": "stun",
+      "unlockLevel": 15,
+      "icon": "earthquake_icon"
+    }
+  ]
+}

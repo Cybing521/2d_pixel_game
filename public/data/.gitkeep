@@ -1,0 +1,10 @@
+# 此文件用于保持空目录在Git中被追踪
+# 请将游戏配置数据文件放置在此目录下
+
+# 推荐文件：
+# data/
+# ├── skills.json      # 技能配置
+# ├── enemies.json     # 敌人配置
+# ├── items.json       # 物品配置
+# ├── quests.json      # 任务配置
+# └── maps/            # 地图数据

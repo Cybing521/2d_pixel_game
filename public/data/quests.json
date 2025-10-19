@@ -1,0 +1,100 @@
+{
+  "quests": [
+    {
+      "id": "main_001",
+      "title": "醒来",
+      "description": "你在迷雾中醒来，什么都不记得了。探索周围，寻找线索。",
+      "type": "main",
+      "objectives": [
+        {
+          "id": "explore_village",
+          "description": "探索村庄",
+          "type": "explore",
+          "target": "starting_village",
+          "required": 1
+        },
+        {
+          "id": "talk_elder",
+          "description": "与村长对话",
+          "type": "talk",
+          "target": "village_elder",
+          "required": 1
+        }
+      ],
+      "rewards": [
+        {
+          "type": "exp",
+          "value": 50,
+          "quantity": 1
+        },
+        {
+          "type": "item",
+          "value": "rusty_sword",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "main_002",
+      "title": "第一步",
+      "description": "村长告诉你，迷雾正在吞噬这片大陆。你需要学会如何战斗。",
+      "type": "main",
+      "prerequisites": ["main_001"],
+      "objectives": [
+        {
+          "id": "defeat_wisps",
+          "description": "击败5只迷雾幽灵",
+          "type": "kill",
+          "target": "fog_wisp",
+          "required": 5
+        },
+        {
+          "id": "collect_essence",
+          "description": "收集3个幽灵精华",
+          "type": "collect",
+          "target": "wisp_essence",
+          "required": 3
+        }
+      ],
+      "rewards": [
+        {
+          "type": "exp",
+          "value": 100,
+          "quantity": 1
+        },
+        {
+          "type": "skill",
+          "value": "frostnova",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "side_001",
+      "title": "失落的药草",
+      "description": "村里的药师需要一些稀有药草来制作药水。",
+      "type": "side",
+      "objectives": [
+        {
+          "id": "collect_herbs",
+          "description": "收集10株月光草",
+          "type": "collect",
+          "target": "moonlight_herb",
+          "required": 10
+        }
+      ],
+      "rewards": [
+        {
+          "type": "exp",
+          "value": 30,
+          "quantity": 1
+        },
+        {
+          "type": "item",
+          "value": "small_potion",
+          "quantity": 5
+        }
+      ]
+    }
+  ]
+}
