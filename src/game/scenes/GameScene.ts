@@ -69,13 +69,5 @@ export class GameScene extends Phaser.Scene {
 
     // 更新迷雾
     this.fogSystem.update(time, delta);
-
-    // 通知UI场景更新
-    this.events.emit('player-update', {
-      health: this.player.getHealth(),
-      maxHealth: this.player.getMaxHealth(),
-      mana: this.player.getMana(),
-      maxMana: this.player.getMaxMana(),
-    });
   }
 }

@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useGameStore } from '@store/gameStore';
 import { HUD } from './HUD';
 import { Inventory } from './Inventory';
+import { Map } from './Map';
 import { DEFAULT_KEYBINDINGS } from '@constants/keybindings';
 
 export const GameUI: React.FC = () => {
@@ -32,6 +33,7 @@ export const GameUI: React.FC = () => {
     <>
       <HUD />
       <Inventory />
+      <Map />
       {/* TODO: 添加其他UI组件 */}
     </>
   );
