@@ -39,7 +39,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         </div>
 
         {/* 版本信息 */}
-        <p className="text-gray-600 text-sm mt-12">v0.1.0</p>
+        <p className="text-gray-600 text-sm mt-12">v0.2.0</p>
       </div>
     </div>
   );

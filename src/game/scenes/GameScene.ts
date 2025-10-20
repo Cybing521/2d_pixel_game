@@ -14,7 +14,18 @@ export class GameScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private lastExploredTile: string = '';
   private respawnPoint: { x: number; y: number } = { x: 400, y: 300 }; // 复活点
-  private village: { x: number; y: number; radius: number } = { x: 400, y: 300, radius: 150 }; // 村庄
+  private villages: Array<{
+    id: string;
+    name: string;
+    x: number;
+    y: number;
+    radius: number;
+    size: 'small' | 'medium' | 'large';
+    unlocked: boolean;
+    hasSpring: boolean;
+    hasTeleport: boolean;
+  }> = []; // 村庄列表
+  private currentVillage: string | null = null; // 当前所在村庄
 
   constructor() {
     super({ key: SCENE_KEYS.GAME });
@@ -30,8 +41,11 @@ export class GameScene extends Phaser.Scene {
     // 创建简单的地面
     this.createGround();
     
+    // 初始化村庄系统
+    this.initializeVillages();
+    
     // 创建村庄标记
-    this.createVillage();
+    this.createVillages();
 
     // 创建玩家
     this.player = new Player(this, 400, 300);
@@ -66,10 +80,13 @@ export class GameScene extends Phaser.Scene {
     this.cursors = this.input.keyboard!.createCursorKeys();
 
     // ESC键暂停
-    this.input.keyboard!.on('keydown-ESC', () => {
-      this.scene.pause();
-      this.scene.pause(SCENE_KEYS.UI);
-      // TODO: 显示暂停菜单
+    this.input.keyboard?.on('keydown-ESC', () => {
+      console.log('ESC pressed - pause game');
+    });
+    
+    // T键传送
+    this.input.keyboard?.on('keydown-T', () => {
+      this.handleTeleport();
     });
   }
 
@@ -91,48 +108,184 @@ export class GameScene extends Phaser.Scene {
     graphics.strokePath();
   }
   
-  private createVillage() {
-    const { x, y, radius } = this.village;
-    
-    // 村庄安全区域（黄色圆圈）
-    const villageCircle = this.add.circle(x, y, radius, 0xffff00, 0.1);
-    villageCircle.setStrokeStyle(3, 0xffff00, 0.5);
-    villageCircle.setDepth(-1);
-    
-    // 村庄标记文字
-    const villageText = this.add.text(x, y - radius - 30, '🏘️ 起始村庄', {
-      fontSize: '24px',
-      color: '#ffff00',
-      fontStyle: 'bold',
-      stroke: '#000000',
-      strokeThickness: 4,
+  private initializeVillages() {
+    // 初始化所有村庄
+    this.villages = [
+      {
+        id: 'starter_village',
+        name: '起始村庄',
+        x: 400,
+        y: 300,
+        radius: 150,
+        size: 'medium',
+        unlocked: true,  // 初始解锁
+        hasSpring: true,  // 有泉水
+        hasTeleport: false,  // 没有传送门（起始村庄）
+      },
+      {
+        id: 'forest_village',
+        name: '森林村庄',
+        x: 1200,
+        y: 800,
+        radius: 100,
+        size: 'small',
+        unlocked: false,  // 需要探索解锁
+        hasSpring: true,
+        hasTeleport: true,
+      },
+      {
+        id: 'mountain_village',
+        name: '山脚村庄',
+        x: 800,
+        y: 1500,
+        radius: 200,
+        size: 'large',
+        unlocked: false,
+        hasSpring: true,
+        hasTeleport: true,
+      },
+    ];
+  }
+  
+  private createVillages() {
+    this.villages.forEach(village => {
+      if (!village.unlocked) return; // 只创建已解锁的村庄
+      
+      const { x, y, radius, name, hasSpring } = village;
+      
+      // 村庄安全区域（黄色圆圈）
+      const villageCircle = this.add.circle(x, y, radius, 0xffff00, 0.1);
+      villageCircle.setStrokeStyle(3, 0xffff00, 0.5);
+      villageCircle.setDepth(-1);
+      
+      // 村庄标记文字
+      const sizeLabel = village.size === 'large' ? '大' : village.size === 'medium' ? '中' : '小';
+      const villageText = this.add.text(x, y - radius - 30, `🏘️ ${name} [${sizeLabel}]`, {
+        fontSize: '24px',
+        color: '#ffff00',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 4,
+      });
+      villageText.setOrigin(0.5);
+      villageText.setDepth(10);
+      
+      // 复活点标记（中心点）
+      const respawnMarker = this.add.circle(x, y, 8, 0xffff00, 1);
+      respawnMarker.setStrokeStyle(2, 0xffffff);
+      respawnMarker.setDepth(10);
+      
+      // 脉动效果
+      this.tweens.add({
+        targets: respawnMarker,
+        scale: 1.5,
+        alpha: 0.5,
+        duration: 1000,
+        yoyo: true,
+        repeat: -1,
+      });
+      
+      // 泉水（如果有）
+      if (hasSpring) {
+        this.createSpring(x, y);
+      }
+      
+      // 传送点（如果有）
+      if (village.hasTeleport) {
+        this.createTeleportPoint(x, y + 40, village.id);
+      }
+      
+      // 添加提示文字
+      let hints = ['安全区域'];
+      if (hasSpring) hints.push('泉水回血');
+      if (village.hasTeleport) hints.push('按T传送');
+      
+      const hintText = this.add.text(x, y + radius + 20, hints.join(' | '), {
+        fontSize: '16px',
+        color: '#ffff00',
+        fontStyle: 'italic',
+      });
+      hintText.setOrigin(0.5);
+      hintText.setAlpha(0.7);
     });
-    villageText.setOrigin(0.5);
-    villageText.setDepth(10);
+  }
+  
+  private createTeleportPoint(x: number, y: number, villageId: string) {
+    // 传送点底座
+    const teleportBase = this.add.circle(x, y, 25, 0xff00ff, 0.3);
+    teleportBase.setStrokeStyle(3, 0xff00ff);
+    teleportBase.setDepth(5);
     
-    // 复活点标记（中心点）
-    const respawnMarker = this.add.circle(x, y, 8, 0xffff00, 1);
-    respawnMarker.setStrokeStyle(2, 0xffffff);
-    respawnMarker.setDepth(10);
+    // 传送点图标
+    const teleportIcon = this.add.text(x, y, '🌀', {
+      fontSize: '40px',
+    });
+    teleportIcon.setOrigin(0.5);
+    teleportIcon.setDepth(6);
     
-    // 脉动效果
+    // 传送点旋转动画
     this.tweens.add({
-      targets: respawnMarker,
-      scale: 1.5,
-      alpha: 0.5,
+      targets: teleportIcon,
+      angle: 360,
+      duration: 3000,
+      repeat: -1,
+    });
+    
+    // 传送点脉动效果
+    this.tweens.add({
+      targets: [teleportBase, teleportIcon],
+      scale: 1.1,
+      alpha: 0.7,
       duration: 1000,
       yoyo: true,
       repeat: -1,
     });
     
-    // 添加提示文字（靠近时显示）
-    const hintText = this.add.text(x, y + radius + 20, '安全区域 - 敌人不会进入', {
-      fontSize: '16px',
-      color: '#ffff00',
-      fontStyle: 'italic',
+    // 传送点标签
+    const teleportLabel = this.add.text(x, y + 40, '传送点 (按T)', {
+      fontSize: '14px',
+      color: '#ff00ff',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2,
     });
-    hintText.setOrigin(0.5);
-    hintText.setAlpha(0.7);
+    teleportLabel.setOrigin(0.5);
+    teleportLabel.setDepth(6);
+  }
+  
+  private createSpring(x: number, y: number) {
+    // 泉水特效（蓝色圆圈）
+    const spring = this.add.circle(x, y - 30, 20, 0x00ffff, 0.3);
+    spring.setStrokeStyle(2, 0x00ffff);
+    spring.setDepth(5);
+    
+    // 泉水图标
+    const springText = this.add.text(x, y - 30, '💧', {
+      fontSize: '32px',
+    });
+    springText.setOrigin(0.5);
+    springText.setDepth(6);
+    
+    // 泉水脉动效果
+    this.tweens.add({
+      targets: [spring, springText],
+      scale: 1.2,
+      alpha: 0.8,
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+    });
+    
+    // 泉水说明
+    const springLabel = this.add.text(x, y - 60, '泉水 (自动回血)', {
+      fontSize: '14px',
+      color: '#00ffff',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 2,
+    });
+    springLabel.setOrigin(0.5);
+    springLabel.setDepth(6);
   }
 
   private spawnEnemies() {
@@ -189,13 +342,14 @@ export class GameScene extends Phaser.Scene {
     enemyTypes.forEach((enemyData, index) => {
       const pos = spawnPositions[index];
       
-      // 确保敌人不在村庄安全区生成
-      const distanceToVillage = Phaser.Math.Distance.Between(
-        pos.x, pos.y, 
-        this.village.x, this.village.y
-      );
+      // 确保敌人不在任何已解锁村庄的安全区生成
+      const isInAnyVillage = this.villages.some(village => {
+        if (!village.unlocked) return false;
+        const distance = Phaser.Math.Distance.Between(pos.x, pos.y, village.x, village.y);
+        return distance < village.radius;
+      });
       
-      if (distanceToVillage > this.village.radius) {
+      if (!isInAnyVillage) {
         const enemy = new Enemy(this, pos.x, pos.y, enemyData);
         this.enemies.add(enemy);
       }
@@ -204,9 +358,57 @@ export class GameScene extends Phaser.Scene {
     console.log(`生成了 ${this.enemies.getLength()} 个敌人（村庄外）`);
   }
   
-  private isInVillage(x: number, y: number): boolean {
-    const distance = Phaser.Math.Distance.Between(x, y, this.village.x, this.village.y);
-    return distance < this.village.radius;
+  private isInVillage(x: number, y: number): { inVillage: boolean; villageId?: string } {
+    for (const village of this.villages) {
+      if (!village.unlocked) continue;
+      const distance = Phaser.Math.Distance.Between(x, y, village.x, village.y);
+      if (distance < village.radius) {
+        return { inVillage: true, villageId: village.id };
+      }
+    }
+    return { inVillage: false };
+  }
+  
+  private healPlayerInSpring(village: typeof this.villages[0], delta: number) {
+    const store = useGameStore.getState();
+    const currentHealth = store.player.health;
+    const maxHealth = store.player.maxHealth;
+    
+    // 如果未满血，每秒回复5点生命值
+    if (currentHealth < maxHealth) {
+      const healRate = 5; // 每秒回复量
+      const healAmount = (healRate * delta) / 1000;
+      const newHealth = Math.min(maxHealth, currentHealth + healAmount);
+      
+      store.updatePlayerStats({ health: newHealth });
+      
+      // 每秒显示一次回血提示
+      if (Math.floor(currentHealth) !== Math.floor(newHealth) && Math.floor(newHealth) % 5 === 0) {
+        this.showFloatingText(this.player.x, this.player.y - 40, `+${Math.floor(healAmount)}`, '#00ff00');
+      }
+    }
+  }
+  
+  private showFloatingText(x: number, y: number, text: string, color: string) {
+    const floatingText = this.add.text(x, y, text, {
+      fontSize: '18px',
+      color: color,
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 3,
+    });
+    floatingText.setOrigin(0.5);
+    floatingText.setDepth(1000);
+    
+    this.tweens.add({
+      targets: floatingText,
+      y: floatingText.y - 30,
+      alpha: 0,
+      duration: 800,
+      onComplete: () => {
+        floatingText.destroy();
+      },
+    });
   }
 
   private onPlayerAttack(data: { x: number; y: number; range: number; damage: number }) {
@@ -376,19 +578,24 @@ export class GameScene extends Phaser.Scene {
         enemy.update(time, delta, this.player);
         
         // 检查敌人是否试图进入村庄
-        if (this.isInVillage(enemy.x, enemy.y)) {
-          // 将敌人推出村庄
-          const angle = Phaser.Math.Angle.Between(
-            this.village.x, this.village.y,
-            enemy.x, enemy.y
-          );
-          
-          // 计算边界位置
-          const pushX = this.village.x + Math.cos(angle) * this.village.radius;
-          const pushY = this.village.y + Math.sin(angle) * this.village.radius;
-          
-          enemy.setPosition(pushX, pushY);
-          enemy.setVelocity(0, 0);
+        const villageCheck = this.isInVillage(enemy.x, enemy.y);
+        if (villageCheck.inVillage && villageCheck.villageId) {
+          // 找到对应的村庄
+          const village = this.villages.find(v => v.id === villageCheck.villageId);
+          if (village) {
+            // 将敌人推出村庄
+            const angle = Phaser.Math.Angle.Between(
+              village.x, village.y,
+              enemy.x, enemy.y
+            );
+            
+            // 计算边界位置
+            const pushX = village.x + Math.cos(angle) * village.radius;
+            const pushY = village.y + Math.sin(angle) * village.radius;
+            
+            enemy.setPosition(pushX, pushY);
+            enemy.setVelocity(0, 0);
+          }
         }
       }
     });
@@ -401,6 +608,27 @@ export class GameScene extends Phaser.Scene {
     const playerY = this.player.y;
     useGameStore.getState().updatePlayerPosition(playerX, playerY);
     
+    // 检查玩家是否在村庄中（泉水回血）
+    const playerVillageCheck = this.isInVillage(playerX, playerY);
+    if (playerVillageCheck.inVillage && playerVillageCheck.villageId) {
+      const village = this.villages.find(v => v.id === playerVillageCheck.villageId);
+      if (village && village.hasSpring) {
+        // 在泉水范围内自动回血
+        this.healPlayerInSpring(village, delta);
+      }
+      
+      // 更新当前所在村庄
+      if (this.currentVillage !== playerVillageCheck.villageId) {
+        this.currentVillage = playerVillageCheck.villageId;
+        console.log(`进入村庄：${village?.name}`);
+      }
+    } else {
+      if (this.currentVillage) {
+        console.log('离开村庄');
+        this.currentVillage = null;
+      }
+    }
+    
     // 记录探索区域（每64像素为一个区域）
     const tileX = Math.floor(playerX / 64);
     const tileY = Math.floor(playerY / 64);
@@ -409,6 +637,159 @@ export class GameScene extends Phaser.Scene {
     if (currentTile !== this.lastExploredTile) {
       useGameStore.getState().addExploredArea(playerX, playerY);
       this.lastExploredTile = currentTile;
+      
+      // 检查是否靠近未解锁的村庄
+      this.checkVillageUnlock(playerX, playerY);
+    }
+  }
+  
+  private checkVillageUnlock(x: number, y: number) {
+    this.villages.forEach(village => {
+      if (village.unlocked) return;
+      
+      // 检查玩家是否靠近未解锁的村庄（范围+50像素）
+      const distance = Phaser.Math.Distance.Between(x, y, village.x, village.y);
+      const discoverRange = village.radius + 50;
+      
+      if (distance < discoverRange) {
+        // 解锁村庄
+        village.unlocked = true;
+        
+        console.log(`🎉 发现新村庄：${village.name}`);
+        
+        // 显示解锁提示
+        this.showVillageUnlockNotification(village);
+        
+        // 创建村庄视觉标记
+        this.createVillages();
+      }
+    });
+  }
+  
+  private showVillageUnlockNotification(village: typeof this.villages[0]) {
+    const sizeLabel = village.size === 'large' ? '大型' : village.size === 'medium' ? '中型' : '小型';
+    
+    // 屏幕中央大字提示
+    const notification = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY - 50,
+      `🎉 发现新村庄！\n\n${village.name}\n[${sizeLabel}村庄]`,
+      {
+        fontSize: '32px',
+        color: '#ffff00',
+        fontStyle: 'bold',
+        align: 'center',
+        stroke: '#000000',
+        strokeThickness: 6,
+      }
+    );
+    notification.setOrigin(0.5);
+    notification.setScrollFactor(0);
+    notification.setDepth(3000);
+    
+    // 淡入淡出动画
+    notification.setAlpha(0);
+    this.tweens.add({
+      targets: notification,
+      alpha: 1,
+      duration: 500,
+      yoyo: true,
+      hold: 2000,
+      onComplete: () => {
+        notification.destroy();
+      },
+    });
+    
+    // 村庄位置闪光特效
+    const flash = this.add.circle(village.x, village.y, village.radius * 2, 0xffff00, 0.5);
+    flash.setDepth(999);
+    
+    this.tweens.add({
+      targets: flash,
+      scale: 2,
+      alpha: 0,
+      duration: 1500,
+      onComplete: () => {
+        flash.destroy();
+      },
+    });
+  }
+  
+  private handleTeleport() {
+    // 检查玩家是否在有传送点的村庄中
+    const playerCheck = this.isInVillage(this.player.x, this.player.y);
+    if (!playerCheck.inVillage || !playerCheck.villageId) {
+      console.log('你不在村庄中，无法传送');
+      return;
+    }
+    
+    const currentVillage = this.villages.find(v => v.id === playerCheck.villageId);
+    if (!currentVillage || !currentVillage.hasTeleport) {
+      console.log('此村庄没有传送点');
+      return;
+    }
+    
+    // 获取所有已解锁且有传送点的村庄（排除当前村庄）
+    const teleportTargets = this.villages.filter(v => 
+      v.unlocked && v.hasTeleport && v.id !== currentVillage.id
+    );
+    
+    if (teleportTargets.length === 0) {
+      console.log('没有可传送的目标村庄');
+      this.showFloatingText(this.player.x, this.player.y - 50, '没有可传送目标', '#ff0000');
+      return;
+    }
+    
+    // 简单实现：传送到第一个可用村庄
+    const target = teleportTargets[0];
+    console.log(`🌀 传送到：${target.name}`);
+    
+    // 传送特效
+    this.showTeleportEffect(this.player.x, this.player.y);
+    
+    // 延迟传送
+    this.time.delayedCall(500, () => {
+      // 移动玩家
+      this.player.setPosition(target.x, target.y);
+      
+      // 到达特效
+      this.showTeleportEffect(target.x, target.y);
+      
+      console.log(`✅ 已到达：${target.name}`);
+    });
+  }
+  
+  private showTeleportEffect(x: number, y: number) {
+    // 传送光效
+    const teleportFlash = this.add.circle(x, y, 50, 0xff00ff, 0.8);
+    teleportFlash.setDepth(2000);
+    
+    this.tweens.add({
+      targets: teleportFlash,
+      scale: 3,
+      alpha: 0,
+      duration: 500,
+      onComplete: () => {
+        teleportFlash.destroy();
+      },
+    });
+    
+    // 传送粒子效果（简单版）
+    for (let i = 0; i < 8; i++) {
+      const angle = (Math.PI * 2 * i) / 8;
+      const particle = this.add.circle(x, y, 5, 0xff00ff, 1);
+      particle.setDepth(2001);
+      
+      this.tweens.add({
+        targets: particle,
+        x: x + Math.cos(angle) * 80,
+        y: y + Math.sin(angle) * 80,
+        alpha: 0,
+        duration: 600,
+        onComplete: () => {
+          particle.destroy();
+        },
+      });
     }
   }
 }
