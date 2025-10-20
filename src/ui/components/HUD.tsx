@@ -1,6 +1,7 @@
 // 游戏内HUD组件
 import React from 'react';
 import { useGameStore } from '@store/gameStore';
+import { MiniMap } from './MiniMap';
 
 export const HUD: React.FC = () => {
   const player = useGameStore((state) => state.player);
@@ -97,6 +98,9 @@ export const HUD: React.FC = () => {
           ))}
         </div>
       </div>
+      
+      {/* 小地图（右上角） */}
+      <MiniMap />
     </div>
   );
 };

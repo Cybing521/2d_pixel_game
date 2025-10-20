@@ -1,6 +1,7 @@
-// 增强版地图组件 - 支持缩放、拖拽、敌人显示等
+// 增强版地图组件 - 支持缩放、拖拽、敌人显示、路径规划等
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useGameStore } from '@store/gameStore';
+import { astar, simplifyPath, type Point } from '@utils/pathfinding';
 
 // 区域合并算法 - 合并相邻探索区域
 function mergeAdjacentAreas(areas: string[]): Array<{ x: number; y: number; width: number; height: number }> {
@@ -63,6 +64,12 @@ const AREA_LABELS = [
   { x: 100, y: 300, name: '西部荒野', color: 'text-orange-400' },
 ];
 
+// 传送点配置（村庄）
+const TELEPORT_POINTS = [
+  { x: 400, y: 300, name: '起始村庄', unlocked: true },
+  // 未来可以添加更多村庄
+];
+
 export const Map: React.FC = () => {
   const isVisible = useGameStore((state) => state.ui.showMap);
   const toggleUI = useGameStore((state) => state.toggleUI);
@@ -77,6 +84,11 @@ export const Map: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredEnemy, setHoveredEnemy] = useState<{ id: string; name: string; x: number; y: number } | null>(null);
+  
+  // 路径规划状态
+  const [targetPoint, setTargetPoint] = useState<Point | null>(null);
+  const [pathPoints, setPathPoints] = useState<Point[]>([]);
+  const [isCalculatingPath, setIsCalculatingPath] = useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cacheCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -166,7 +178,23 @@ export const Map: React.FC = () => {
     const cacheCanvas = getCacheCanvas();
     ctx.drawImage(cacheCanvas, 0, 0);
 
-    // 绘制探索区域（使用合并算法）
+    // 绘制迷雾战争（未探索区域黑色遮罩）
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.fillRect(0, 0, mapWidth, mapHeight);
+    
+    // 清除已探索区域的遮罩（使用合并算法）
+    ctx.globalCompositeOperation = 'destination-out';
+    mergedAreas.forEach((area) => {
+      const x = (area.x * 64 + 32) * baseScale - 6.4;
+      const y = (area.y * 64 + 32) * baseScale - 6.4;
+      const w = area.width * 64 * baseScale;
+      const h = area.height * 64 * baseScale;
+      ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+      ctx.fillRect(x, y, w, h);
+    });
+    ctx.globalCompositeOperation = 'source-over';
+    
+    // 绘制探索区域（蓝色边框）
     ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
     ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
     ctx.lineWidth = 1 / zoom;
@@ -179,24 +207,59 @@ export const Map: React.FC = () => {
       ctx.strokeRect(x, y, w, h);
     });
 
-    // 绘制村庄（起始村庄）
-    const villageX = 400 * baseScale;
-    const villageY = 300 * baseScale;
-    
-    // 村庄光圈
-    ctx.fillStyle = 'rgba(234, 179, 8, 0.2)';
-    ctx.strokeStyle = 'rgba(234, 179, 8, 0.8)';
-    ctx.lineWidth = 2 / zoom;
-    ctx.beginPath();
-    ctx.arc(villageX, villageY, 15, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    
-    // 村庄中心点
-    ctx.fillStyle = 'rgba(234, 179, 8, 1)';
-    ctx.beginPath();
-    ctx.arc(villageX, villageY, 4, 0, Math.PI * 2);
-    ctx.fill();
+    // 绘制传送点（村庄）
+    TELEPORT_POINTS.forEach((point) => {
+      const x = point.x * baseScale;
+      const y = point.y * baseScale;
+      
+      // 传送门外圈（旋转效果）
+      const rotation = (Date.now() / 2000) * Math.PI * 2;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      
+      // 绘制六边形传送门
+      ctx.strokeStyle = point.unlocked ? 'rgba(59, 130, 246, 0.8)' : 'rgba(100, 100, 100, 0.5)';
+      ctx.lineWidth = 2 / zoom;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const px = Math.cos(angle) * 15;
+        const py = Math.sin(angle) * 15;
+        if (i === 0) {
+          ctx.moveTo(px, py);
+        } else {
+          ctx.lineTo(px, py);
+        }
+      }
+      ctx.closePath();
+      ctx.stroke();
+      
+      // 填充
+      ctx.fillStyle = point.unlocked ? 'rgba(59, 130, 246, 0.2)' : 'rgba(100, 100, 100, 0.2)';
+      ctx.fill();
+      
+      ctx.restore();
+      
+      // 传送门中心图标（上箭头）
+      ctx.fillStyle = point.unlocked ? 'rgba(59, 130, 246, 1)' : 'rgba(100, 100, 100, 1)';
+      ctx.beginPath();
+      ctx.moveTo(x, y - 6);
+      ctx.lineTo(x + 4, y + 2);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x - 4, y + 2);
+      ctx.closePath();
+      ctx.fill();
+      
+      // 下箭头
+      ctx.beginPath();
+      ctx.moveTo(x, y + 6);
+      ctx.lineTo(x + 4, y - 2);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x - 4, y - 2);
+      ctx.closePath();
+      ctx.fill();
+    });
 
     // 绘制敌人位置
     ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
@@ -246,8 +309,63 @@ export const Map: React.FC = () => {
     ctx.fill();
     ctx.stroke();
 
+    // 绘制路径线（如果有）
+    if (pathPoints.length > 1) {
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+      ctx.lineWidth = 3 / zoom;
+      ctx.setLineDash([10 / zoom, 5 / zoom]);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      ctx.beginPath();
+      const firstPoint = pathPoints[0];
+      ctx.moveTo(firstPoint.x * baseScale, firstPoint.y * baseScale);
+      
+      for (let i = 1; i < pathPoints.length; i++) {
+        const point = pathPoints[i];
+        ctx.lineTo(point.x * baseScale, point.y * baseScale);
+      }
+      
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    
+    // 绘制目标点（如果有）
+    if (targetPoint) {
+      const tx = targetPoint.x * baseScale;
+      const ty = targetPoint.y * baseScale;
+      
+      // 目标点光圈（脉动效果）
+      const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
+      ctx.fillStyle = `rgba(255, 215, 0, ${pulse * 0.3})`;
+      ctx.beginPath();
+      ctx.arc(tx, ty, 12, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 目标点标记（星形）
+      ctx.fillStyle = 'rgba(255, 215, 0, 1)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+      ctx.lineWidth = 2 / zoom;
+      
+      // 绘制五角星
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+        const x = tx + Math.cos(angle) * 6;
+        const y = ty + Math.sin(angle) * 6;
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
     ctx.restore();
-  }, [playerPosition, progress.exploredAreas, enemies, questMarkers, zoom, offset]);
+  }, [playerPosition, progress.exploredAreas, enemies, questMarkers, zoom, offset, pathPoints, targetPoint]);
 
   // 鼠标拖拽和悬停检测
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -302,6 +420,63 @@ export const Map: React.FC = () => {
   const handleMouseUp = () => {
     setIsDragging(false);
   };
+  
+  // 处理地图右键点击（设置目标点）
+  const handleMapRightClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    // 获取点击位置
+    const rect = canvas.getBoundingClientRect();
+    const canvasX = e.clientX - rect.left;
+    const canvasY = e.clientY - rect.top;
+    
+    // 转换为世界坐标
+    const worldX = (canvasX - offset.x) / zoom;
+    const worldY = (canvasY - offset.y) / zoom;
+    const targetX = worldX / baseScale;
+    const targetY = worldY / baseScale;
+    
+    // 检查目标点是否在已探索区域
+    const targetTile = `${Math.floor(targetX / 64)}-${Math.floor(targetY / 64)}`;
+    if (!progress.exploredAreas.includes(targetTile)) {
+      alert('目标点未探索，无法设置路径！');
+      return;
+    }
+    
+    // 设置目标点
+    const target: Point = { x: targetX, y: targetY };
+    setTargetPoint(target);
+    setIsCalculatingPath(true);
+    
+    // 异步计算路径（避免阻塞主线程）
+    setTimeout(() => {
+      const path = astar(
+        playerPosition,
+        target,
+        progress.exploredAreas
+      );
+      
+      if (path.length > 0) {
+        // 简化路径
+        const simplified = simplifyPath(path);
+        setPathPoints(simplified);
+        console.log(`路径计算完成：${path.length}点 -> ${simplified.length}点`);
+      } else {
+        alert('无法找到到达目标的路径！');
+        setTargetPoint(null);
+      }
+      setIsCalculatingPath(false);
+    }, 10);
+  };
+  
+  // 清除路径
+  const clearPath = () => {
+    setTargetPoint(null);
+    setPathPoints([]);
+  };
 
   // 滚轮缩放
   const handleWheel = (e: React.WheelEvent) => {
@@ -355,6 +530,8 @@ export const Map: React.FC = () => {
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onWheel={handleWheel}
+            onContextMenu={handleMapRightClick}
+            title="右键点击设置目标点"
           />
           
           {/* 区域名称标签（覆盖层） */}
@@ -414,8 +591,8 @@ export const Map: React.FC = () => {
             <span className="text-gray-300">已探索</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-yellow-500 rounded-full border border-yellow-400" />
-            <span className="text-gray-300">村庄</span>
+            <div className="w-3 h-3 bg-blue-500 border-2 border-blue-400" style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }} />
+            <span className="text-gray-300">传送点</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-orange-500 rotate-45" />
@@ -433,10 +610,41 @@ export const Map: React.FC = () => {
           <span>玩家位置: ({Math.floor(playerPosition.x)}, {Math.floor(playerPosition.y)})</span>
         </div>
 
+        {/* 路径规划控制 */}
+        {(targetPoint || isCalculatingPath) && (
+          <div className="mt-3 flex items-center justify-between bg-gray-800 px-4 py-2 rounded">
+            <div className="flex items-center gap-2">
+              {isCalculatingPath ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-yellow-400 text-sm">计算路径中...</span>
+                </>
+              ) : (
+                <>
+                  <div className="w-4 h-4 bg-yellow-400 rounded-full" />
+                  <span className="text-yellow-400 text-sm">
+                    目标: ({Math.floor(targetPoint!.x)}, {Math.floor(targetPoint!.y)})
+                  </span>
+                  <span className="text-gray-400 text-xs ml-2">
+                    {pathPoints.length} 个路径点
+                  </span>
+                </>
+              )}
+            </div>
+            <button
+              onClick={clearPath}
+              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded"
+            >
+              取消路径
+            </button>
+          </div>
+        )}
+        
         {/* 提示 */}
         <div className="mt-3 text-xs text-gray-500 text-center">
           按 <kbd className="px-2 py-1 bg-gray-700 rounded">M</kbd> 关闭地图 | 
-          滚轮缩放 | 拖拽移动 | 悬停敌人查看名称
+          滚轮缩放 | 拖拽移动 | 悬停敌人查看名称 | 
+          <span className="text-yellow-400">右键设置路径</span>
         </div>
       </div>
     </div>

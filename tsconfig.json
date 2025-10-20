@@ -29,7 +29,8 @@
       "@store/*": ["src/store/*"],
       "@assets/*": ["public/assets/*"],
       "@types/*": ["src/types/*"],
-      "@constants/*": ["src/constants/*"]
+      "@constants/*": ["src/constants/*"],
+      "@utils/*": ["src/utils/*"]
     }
   },
   "include": ["src"],
