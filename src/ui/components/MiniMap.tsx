@@ -50,18 +50,19 @@ export const MiniMap: React.FC = () => {
     ctx.globalCompositeOperation = 'destination-out';
     progress.exploredAreas.forEach((area) => {
       const [tileX, tileY] = area.split('-').map(Number);
-      const worldX = tileX * 64 + 32;
-      const worldY = tileY * 64 + 32;
+      const worldX = tileX * 64;
+      const worldY = tileY * 64;
       
       // 转换为小地图坐标
       const mapX = (worldX - centerX + viewRange / 2) * scale;
       const mapY = (worldY - centerY + viewRange / 2) * scale;
+      const tileSize = 64 * scale;
       
       // 只绘制可见范围内的
-      if (mapX >= -10 && mapX <= miniMapSize + 10 && 
-          mapY >= -10 && mapY <= miniMapSize + 10) {
+      if (mapX >= -tileSize && mapX <= miniMapSize + tileSize && 
+          mapY >= -tileSize && mapY <= miniMapSize + tileSize) {
         ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-        ctx.fillRect(mapX - 4, mapY - 4, 8, 8);
+        ctx.fillRect(mapX, mapY, tileSize, tileSize);
       }
     });
     
@@ -71,15 +72,16 @@ export const MiniMap: React.FC = () => {
     ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
     progress.exploredAreas.forEach((area) => {
       const [tileX, tileY] = area.split('-').map(Number);
-      const worldX = tileX * 64 + 32;
-      const worldY = tileY * 64 + 32;
+      const worldX = tileX * 64;
+      const worldY = tileY * 64;
       
       const mapX = (worldX - centerX + viewRange / 2) * scale;
       const mapY = (worldY - centerY + viewRange / 2) * scale;
+      const tileSize = 64 * scale;
       
-      if (mapX >= -10 && mapX <= miniMapSize + 10 && 
-          mapY >= -10 && mapY <= miniMapSize + 10) {
-        ctx.fillRect(mapX - 3, mapY - 3, 6, 6);
+      if (mapX >= -tileSize && mapX <= miniMapSize + tileSize && 
+          mapY >= -tileSize && mapY <= miniMapSize + tileSize) {
+        ctx.fillRect(mapX, mapY, tileSize, tileSize);
       }
     });
     

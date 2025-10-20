@@ -109,8 +109,6 @@ export const Map: React.FC = () => {
     return mergeAdjacentAreas(progress.exploredAreas);
   }, [progress.exploredAreas]);
 
-  if (!isVisible) return null;
-
   // 创建缓存Canvas（静态内容）
   const getCacheCanvas = () => {
     if (!cacheCanvasRef.current) {
@@ -189,8 +187,8 @@ export const Map: React.FC = () => {
     // 清除已探索区域的遮罩（使用合并算法）
     ctx.globalCompositeOperation = 'destination-out';
     mergedAreas.forEach((area) => {
-      const x = (area.x * 64 + 32) * baseScale - 6.4;
-      const y = (area.y * 64 + 32) * baseScale - 6.4;
+      const x = area.x * 64 * baseScale;
+      const y = area.y * 64 * baseScale;
       const w = area.width * 64 * baseScale;
       const h = area.height * 64 * baseScale;
       ctx.fillStyle = 'rgba(255, 255, 255, 1)';
@@ -203,8 +201,8 @@ export const Map: React.FC = () => {
     ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
     ctx.lineWidth = 1 / zoom;
     mergedAreas.forEach((area) => {
-      const x = (area.x * 64 + 32) * baseScale - 6.4;
-      const y = (area.y * 64 + 32) * baseScale - 6.4;
+      const x = area.x * 64 * baseScale;
+      const y = area.y * 64 * baseScale;
       const w = area.width * 64 * baseScale;
       const h = area.height * 64 * baseScale;
       ctx.fillRect(x, y, w, h);
@@ -554,6 +552,9 @@ export const Map: React.FC = () => {
     setZoom(1);
     setOffset({ x: 0, y: 0 });
   };
+
+  // 提前返回（所有hooks已调用）
+  if (!isVisible) return null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50">
