@@ -2,6 +2,8 @@
 import React from 'react';
 import { useGameStore } from '@store/gameStore';
 import { MiniMap } from './MiniMap';
+import { LevelUpToast } from './LevelUpToast';
+import { UnallocatedPointsIndicator } from './UnallocatedPointsIndicator';
 
 export const HUD: React.FC = () => {
   const player = useGameStore((state) => state.player);
@@ -101,6 +103,12 @@ export const HUD: React.FC = () => {
       
       {/* 小地图（右上角） */}
       <MiniMap />
+      
+      {/* 升级Toast提示 */}
+      <LevelUpToast />
+      
+      {/* 未分配属性点提示 */}
+      <UnallocatedPointsIndicator />
     </div>
   );
 };

@@ -4,7 +4,7 @@ import {SaveData} from '@/types/systems';
 
 export class SaveSystem {
   private static SAVE_KEY = 'forgotten-pixel-realm-save';
-  private static VERSION = '1.0.0';
+  private static VERSION = '0.4.0';
 
   /**
    * 保存游戏数据
@@ -22,6 +22,10 @@ export class SaveSystem {
         unlockedSkills: [],
         completedQuests: [],
         discoveredItems: [],
+        exp: 0,
+        expToNextLevel: 50,
+        unallocatedPoints: 0,
+        recentChoices: [],
       },
       settings: data.settings || {
         volume: {

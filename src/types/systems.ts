@@ -64,6 +64,11 @@ export interface ProgressData {
   unlockedSkills: string[];
   completedQuests: string[];
   discoveredItems: string[];
+  // 等级成长系统
+  exp: number;
+  expToNextLevel: number;
+  unallocatedPoints: number;
+  recentChoices: string[];  // 最近5次选择的属性ID
 }
 
 export interface SettingsData {

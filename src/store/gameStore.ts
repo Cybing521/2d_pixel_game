@@ -58,6 +58,16 @@ interface GameState {
   // 小地图位置
   miniMapPosition: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
   
+  // 升级特效
+  levelUpEffect: {
+    show: boolean;
+    level: number;
+    healthRestore: number;
+    manaRestore: number;
+    actualHealthRestore: number;
+    actualManaRestore: number;
+  } | null;
+  
   // 背包
   inventory: {
     items: (Item | null)[];
@@ -101,6 +111,10 @@ interface GameState {
   addMapMarker: (x: number, y: number, type: string, label: string) => void;
   removeMapMarker: (id: string) => void;
   setMiniMapPosition: (position: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left') => void;
+  updateProgress: (updates: Partial<ProgressData>) => void;
+  addUnallocatedPoint: () => void;
+  consumeUnallocatedPoint: () => void;
+  showLevelUpEffect: (data: any) => void;
   saveGame: () => void;
   loadGame: () => void;
 }
@@ -142,6 +156,8 @@ export const useGameStore = create<GameState>()(
     
     miniMapPosition: 'top-right',
     
+    levelUpEffect: null,
+    
     inventory: {
       items: Array(20).fill(null),
       maxSlots: 20,
@@ -152,9 +168,13 @@ export const useGameStore = create<GameState>()(
     progress: {
       exploredAreas: [],
       killedBosses: [],
-      unlockedSkills: ['fireball'],
+      unlockedSkills: [],
       completedQuests: [],
       discoveredItems: [],
+      exp: 0,
+      expToNextLevel: 100,
+      unallocatedPoints: 0,
+      recentChoices: [],
     },
     
     settings: {
@@ -226,6 +246,10 @@ export const useGameStore = create<GameState>()(
         unlockedSkills: ['fireball'],
         completedQuests: [],
         discoveredItems: [],
+        exp: 0,
+        expToNextLevel: 50,
+        unallocatedPoints: 0,
+        recentChoices: [],
       };
       
       console.log('游戏已重置到初始状态');
@@ -340,6 +364,32 @@ export const useGameStore = create<GameState>()(
     
     setMiniMapPosition: (position) => set((state) => {
       state.miniMapPosition = position;
+    }),
+    
+    updateProgress: (updates) => set((state) => {
+      Object.assign(state.progress, updates);
+    }),
+    
+    addUnallocatedPoint: () => set((state) => {
+      state.progress.unallocatedPoints += 1;
+    }),
+    
+    consumeUnallocatedPoint: () => set((state) => {
+      if (state.progress.unallocatedPoints > 0) {
+        state.progress.unallocatedPoints -= 1;
+      }
+    }),
+    
+    showLevelUpEffect: (data) => set((state) => {
+      state.levelUpEffect = {
+        show: true,
+        ...data,
+      };
+      
+      // 3秒后自动隐藏
+      setTimeout(() => {
+        useGameStore.setState({ levelUpEffect: null });
+      }, 3000);
     }),
     
     saveGame: () => {
