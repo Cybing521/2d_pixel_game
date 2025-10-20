@@ -72,7 +72,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
-    // 启动主菜单场景
-    this.scene.start(SCENE_KEYS.MENU);
+    // 资源加载完成，等待 React 主菜单的指令
+    // 不再自动启动 MenuScene，由 React 控制游戏启动
+    console.log('游戏资源加载完成，等待开始...');
   }
 }

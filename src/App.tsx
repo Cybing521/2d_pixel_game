@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Game } from './game';
 import { GameUI } from './ui/components/GameUI';
 import { MainMenu } from './ui/components/MainMenu';
-import { SaveSystem } from './game/systems/SaveSystem';
+import { useGameStore } from './store/gameStore';
 import './index.css';
 
 function App() {
@@ -12,8 +12,9 @@ function App() {
   const [hasSaveData, setHasSaveData] = useState(false);
 
   useEffect(() => {
-    // 检查是否有存档
-    setHasSaveData(SaveSystem.exists());
+    // 检查是否有存档（使用 Zustand persist 的存储）
+    const savedData = localStorage.getItem('forgotten-realm-storage');
+    setHasSaveData(savedData !== null);
 
     // 初始化游戏
     if (!gameRef.current) {
@@ -30,16 +31,37 @@ function App() {
   }, []);
 
   const handleStartGame = () => {
+    // 开始新游戏：重置所有数据
+    const resetGame = useGameStore.getState().resetGame;
+    resetGame();
+    
+    // 清空 LocalStorage 中的存档
+    localStorage.removeItem('forgotten-realm-storage');
+    
+    // 启动游戏
     setGameStarted(true);
-    // TODO: 通知Phaser开始游戏
+    setHasSaveData(false);
+    
+    // 通知 Phaser 启动游戏场景
+    if (gameRef.current) {
+      gameRef.current.startGameScene();
+    }
+    
+    console.log('开始新游戏');
   };
 
   const handleContinueGame = () => {
-    const saveData = SaveSystem.load();
-    if (saveData) {
-      setGameStarted(true);
-      // TODO: 加载存档数据到游戏
+    // 继续游戏：使用持久化的数据
+    // Zustand persist 会自动加载数据，无需手动操作
+    
+    setGameStarted(true);
+    
+    // 通知 Phaser 启动游戏场景
+    if (gameRef.current) {
+      gameRef.current.startGameScene();
     }
+    
+    console.log('继续游戏，加载已保存的进度');
   };
 
   const handleSettings = () => {

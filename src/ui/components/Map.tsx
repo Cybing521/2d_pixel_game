@@ -6,6 +6,7 @@ export const Map: React.FC = () => {
   const isVisible = useGameStore((state) => state.ui.showMap);
   const toggleUI = useGameStore((state) => state.toggleUI);
   const progress = useGameStore((state) => state.progress);
+  const playerPosition = useGameStore((state) => state.playerPosition);
 
   if (!isVisible) return null;
 
@@ -15,15 +16,18 @@ export const Map: React.FC = () => {
   const worldWidth = 2000;
   const scale = mapWidth / worldWidth;
 
-  // 模拟玩家位置（中心点）
-  const playerX = 400 * scale;
-  const playerY = 300 * scale;
+  // 玩家位置（实时）
+  const playerX = playerPosition.x * scale;
+  const playerY = playerPosition.y * scale;
 
-  // 探索区域示例（这里先用静态数据，实际应该从游戏状态获取）
+  // 探索区域（实时）
   const exploredAreas = progress.exploredAreas.map((area) => {
-    // 解析区域坐标（格式如 "x-y"）
-    const [x, y] = area.split('-').map(Number);
-    return { x: x * scale, y: y * scale };
+    // 解析区域坐标（格式如 "x-y"），转换为像素坐标
+    const [tileX, tileY] = area.split('-').map(Number);
+    // 每个区域64像素，取中心点
+    const x = (tileX * 64 + 32) * scale;
+    const y = (tileY * 64 + 32) * scale;
+    return { x, y };
   });
 
   return (
@@ -56,12 +60,12 @@ export const Map: React.FC = () => {
           {exploredAreas.map((area, index) => (
             <div
               key={index}
-              className="absolute bg-blue-500/30 border border-blue-400/50"
+              className="absolute bg-blue-500/30 border border-blue-400/50 rounded-sm"
               style={{
-                left: area.x - 10,
-                top: area.y - 10,
-                width: 20,
-                height: 20,
+                left: area.x - 6.4,
+                top: area.y - 6.4,
+                width: 12.8,
+                height: 12.8,
               }}
             />
           ))}
@@ -82,14 +86,14 @@ export const Map: React.FC = () => {
           {/* 世界边界 */}
           <div className="absolute inset-0 border-2 border-red-500/50 pointer-events-none" />
 
-          {/* 起始村庄标记 */}
+          {/* 起始村庄标记（玩家出生点） */}
           <div
             className="absolute"
-            style={{ left: 400 * scale - 16, top: 300 * scale - 16 }}
+            style={{ left: 400 * scale - 12, top: 300 * scale - 12 }}
             title="起始村庄"
           >
-            <div className="w-8 h-8 flex items-center justify-center">
-              <span className="text-2xl">🏘️</span>
+            <div className="w-6 h-6 flex items-center justify-center">
+              <span className="text-xl">🏘️</span>
             </div>
           </div>
         </div>

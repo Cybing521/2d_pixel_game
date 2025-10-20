@@ -3,11 +3,13 @@ import Phaser from 'phaser';
 import { SCENE_KEYS, GAME_CONFIG } from '@constants/gameConfig';
 import { Player } from '../entities/Player';
 import { FogSystem } from '../systems/FogSystem';
+import { useGameStore } from '@store/gameStore';
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
   private fogSystem!: FogSystem;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private lastExploredTile: string = '';
 
   constructor() {
     super({ key: SCENE_KEYS.GAME });
@@ -69,5 +71,20 @@ export class GameScene extends Phaser.Scene {
 
     // 更新迷雾
     this.fogSystem.update(time, delta);
+    
+    // 更新玩家位置到store
+    const playerX = this.player.x;
+    const playerY = this.player.y;
+    useGameStore.getState().updatePlayerPosition(playerX, playerY);
+    
+    // 记录探索区域（每64像素为一个区域）
+    const tileX = Math.floor(playerX / 64);
+    const tileY = Math.floor(playerY / 64);
+    const currentTile = `${tileX}-${tileY}`;
+    
+    if (currentTile !== this.lastExploredTile) {
+      useGameStore.getState().addExploredArea(playerX, playerY);
+      this.lastExploredTile = currentTile;
+    }
   }
 }

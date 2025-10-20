@@ -4,13 +4,13 @@ import { PLAYER_CONFIG } from '@constants/gameConfig';
 import { DEFAULT_KEYBINDINGS } from '@constants/keybindings';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
-  private speed = PLAYER_CONFIG.SPEED;
-  private health = PLAYER_CONFIG.STARTING_HEALTH;
-  private maxHealth = PLAYER_CONFIG.STARTING_HEALTH;
-  private mana = PLAYER_CONFIG.STARTING_MANA;
-  private maxMana = PLAYER_CONFIG.STARTING_MANA;
-  private level = PLAYER_CONFIG.STARTING_LEVEL;
-  private exp = 0;
+  private speed: number = PLAYER_CONFIG.SPEED;
+  private health: number = PLAYER_CONFIG.STARTING_HEALTH;
+  private maxHealth: number = PLAYER_CONFIG.STARTING_HEALTH;
+  private mana: number = PLAYER_CONFIG.STARTING_MANA;
+  private maxMana: number = PLAYER_CONFIG.STARTING_MANA;
+  private level: number = PLAYER_CONFIG.STARTING_LEVEL;
+  private exp: number = 0;
 
   // 输入控制
   private keys!: {

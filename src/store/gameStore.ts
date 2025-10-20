@@ -1,5 +1,6 @@
 // 游戏全局状态管理
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { PlayerData, Item, EquippedItems } from '../types/entities';
 import type { Quest, ProgressData, SettingsData } from '../types/systems';
@@ -13,6 +14,12 @@ interface GameState {
   
   // 玩家数据
   player: PlayerData;
+  
+  // 玩家位置（实时）
+  playerPosition: {
+    x: number;
+    y: number;
+  };
   
   // 背包
   inventory: {
@@ -41,7 +48,10 @@ interface GameState {
   startGame: () => void;
   pauseGame: () => void;
   resumeGame: () => void;
+  resetGame: () => void;
   updatePlayerStats: (stats: Partial<PlayerData>) => void;
+  updatePlayerPosition: (x: number, y: number) => void;
+  addExploredArea: (x: number, y: number) => void;
   addItem: (item: Item) => boolean;
   removeItem: (itemId: string) => boolean;
   equipItem: (item: Item, slot: keyof EquippedItems) => void;
@@ -53,10 +63,11 @@ interface GameState {
 }
 
 export const useGameStore = create<GameState>()(
-  immer((set, get) => ({
-    isPlaying: false,
-    isPaused: false,
-    currentScene: 'menu',
+  persist(
+    immer((set, get) => ({
+      isPlaying: false,
+      isPaused: false,
+      currentScene: 'menu',
     
     player: {
       level: PLAYER_CONFIG.STARTING_LEVEL,
@@ -71,6 +82,11 @@ export const useGameStore = create<GameState>()(
       speed: PLAYER_CONFIG.SPEED,
       skills: ['fireball'],
       equippedItems: {},
+    },
+    
+    playerPosition: {
+      x: 400,
+      y: 300,
     },
     
     inventory: {
@@ -121,8 +137,65 @@ export const useGameStore = create<GameState>()(
       state.isPaused = false;
     }),
     
+    resetGame: () => set((state) => {
+      // 重置所有游戏数据到初始状态
+      state.player = {
+        level: PLAYER_CONFIG.STARTING_LEVEL,
+        exp: 0,
+        expToNextLevel: 100,
+        health: PLAYER_CONFIG.STARTING_HEALTH,
+        maxHealth: PLAYER_CONFIG.STARTING_HEALTH,
+        mana: PLAYER_CONFIG.STARTING_MANA,
+        maxMana: PLAYER_CONFIG.STARTING_MANA,
+        attack: 10,
+        defense: 5,
+        speed: PLAYER_CONFIG.SPEED,
+        skills: ['fireball'],
+        equippedItems: {},
+      };
+      
+      state.playerPosition = {
+        x: 400,
+        y: 300,
+      };
+      
+      state.inventory = {
+        items: Array(20).fill(null),
+        maxSlots: 20,
+      };
+      
+      state.quests = [];
+      
+      state.progress = {
+        exploredAreas: [],
+        killedBosses: [],
+        unlockedSkills: ['fireball'],
+        completedQuests: [],
+        discoveredItems: [],
+      };
+      
+      console.log('游戏已重置到初始状态');
+    }),
+    
     updatePlayerStats: (stats) => set((state) => {
       Object.assign(state.player, stats);
+    }),
+    
+    updatePlayerPosition: (x, y) => set((state) => {
+      state.playerPosition.x = x;
+      state.playerPosition.y = y;
+    }),
+    
+    addExploredArea: (x, y) => set((state) => {
+      // 将位置转换为区域坐标（每64像素为一个区域）
+      const areaX = Math.floor(x / 64);
+      const areaY = Math.floor(y / 64);
+      const areaKey = `${areaX}-${areaY}`;
+      
+      // 如果该区域未探索，则添加
+      if (!state.progress.exploredAreas.includes(areaKey)) {
+        state.progress.exploredAreas.push(areaKey);
+      }
     }),
     
     addItem: (item) => {
@@ -183,5 +256,19 @@ export const useGameStore = create<GameState>()(
       // TODO: 使用SaveSystem加载
       console.log('加载游戏');
     },
-  }))
+  })),
+  {
+    name: 'forgotten-realm-storage', // LocalStorage 中的键名
+    partialize: (state) => ({
+      // 只持久化以下数据，不持久化临时状态
+      player: state.player,
+      playerPosition: state.playerPosition,
+      inventory: state.inventory,
+      quests: state.quests,
+      progress: state.progress,
+      settings: state.settings,
+    }),
+    version: 1, // 版本号，用于数据迁移
+  }
+)
 );

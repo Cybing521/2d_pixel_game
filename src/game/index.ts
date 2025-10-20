@@ -29,4 +29,16 @@ export class Game {
   getGame(): Phaser.Game | null {
     return this.game;
   }
+
+  /**
+   * 启动游戏场景
+   */
+  startGameScene() {
+    if (this.game) {
+      const gameScene = this.game.scene.getScene('GameScene');
+      if (gameScene) {
+        this.game.scene.start('GameScene');
+      }
+    }
+  }
 }
