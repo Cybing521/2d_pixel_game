@@ -2,6 +2,7 @@
 import Phaser from 'phaser';
 import { PLAYER_CONFIG } from '@constants/gameConfig';
 import { DEFAULT_KEYBINDINGS } from '@constants/keybindings';
+import { useGameStore } from '@store/gameStore';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private speed: number = PLAYER_CONFIG.SPEED;
@@ -99,11 +100,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   takeDamage(amount: number) {
     this.health = Math.max(0, this.health - amount);
     
-    // 受伤闪烁效果
+    // 同步血量到store（关键！）
+    useGameStore.getState().updatePlayerStats({ health: this.health });
+    
+    // 显示伤害数字
+    this.showDamageNumber(amount);
+    
+    // 受伤闪烁效果（更明显）
     this.setTint(0xff0000);
-    this.scene.time.delayedCall(100, () => {
+    this.scene.time.delayedCall(200, () => {
       this.clearTint();
     });
+    
+    // 震动效果
+    this.scene.cameras.main.shake(100, 0.002);
+
+    console.log(`玩家受到 ${amount} 点伤害，剩余血量：${this.health}/${this.maxHealth}`);
 
     if (this.health <= 0) {
       this.onDeath();
@@ -143,13 +155,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // 攻击动画（简单的缩放效果）
     this.scene.tweens.add({
       targets: this,
-      scaleX: 2.3,
-      scaleY: 2.3,
+      scaleX: 2.5,
+      scaleY: 2.5,
       duration: 100,
       yoyo: true,
     });
     
-    // 发射政击事件
+    // 攻击特效（白色闪光圈）
+    const attackCircle = this.scene.add.circle(this.x, this.y, this.attackRange, 0xffffff, 0.3);
+    this.scene.tweens.add({
+      targets: attackCircle,
+      alpha: 0,
+      scale: 1.5,
+      duration: 200,
+      onComplete: () => {
+        attackCircle.destroy();
+      },
+    });
+    
+    // 发射攻击事件
     this.scene.events.emit('player-attack', {
       x: this.x,
       y: this.y,
@@ -157,12 +181,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       damage: this.attackDamage,
     });
     
-    console.log('玩家攻击！');
+    console.log('玩家攻击！范围：' + this.attackRange);
+  }
+
+  private showDamageNumber(damage: number) {
+    const text = this.scene.add.text(this.x, this.y - 30, `-${damage}`, {
+      fontSize: '20px',
+      color: '#ff0000',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 3,
+    });
+    text.setOrigin(0.5);
+    
+    // 飘字动画
+    this.scene.tweens.add({
+      targets: text,
+      y: text.y - 40,
+      alpha: 0,
+      duration: 1000,
+      onComplete: () => {
+        text.destroy();
+      },
+    });
   }
 
   private onDeath() {
     // TODO: 处理玩家死亡
     console.log('Player died');
+    this.setTint(0x000000);
   }
 
   // Getters

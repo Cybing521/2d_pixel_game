@@ -194,14 +194,28 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     
     this.health = Math.max(0, this.health - amount);
     
-    // 受伤效果
+    // 受伤效果（更明显的闪白）
     this.setTint(0xffffff);
-    this.scene.time.delayedCall(100, () => {
-      this.clearTint();
+    
+    // 受伤震动
+    this.scene.tweens.add({
+      targets: this,
+      x: this.x + 5,
+      duration: 50,
+      yoyo: true,
+      repeat: 2,
+    });
+    
+    this.scene.time.delayedCall(150, () => {
+      if (!this.isDead) {
+        this.clearTint();
+      }
     });
     
     // 显示伤害数字
     this.showDamageNumber(amount);
+    
+    console.log(`${this.enemyData.name} 受到 ${amount} 点伤害，剩余血量：${this.health}/${this.maxHealth}`);
     
     // 检查死亡
     if (this.health <= 0) {
@@ -211,18 +225,23 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   private showDamageNumber(damage: number) {
     const text = this.scene.add.text(this.x, this.y - 20, `-${damage}`, {
-      fontSize: '16px',
-      color: '#ff0000',
+      fontSize: '24px',
+      color: '#ffff00',
       fontStyle: 'bold',
+      stroke: '#ff0000',
+      strokeThickness: 4,
     });
     text.setOrigin(0.5);
+    text.setDepth(1000); // 确保在最上层
     
-    // 飘字动画
+    // 飘字动画（更明显）
     this.scene.tweens.add({
       targets: text,
-      y: text.y - 30,
+      y: text.y - 50,
       alpha: 0,
-      duration: 800,
+      scale: 1.5,
+      duration: 1000,
+      ease: 'Power2',
       onComplete: () => {
         text.destroy();
       },

@@ -37,8 +37,8 @@ export class GameScene extends Phaser.Scene {
     // 生成敌人
     this.spawnEnemies();
     
-    // 设置碰撞
-    this.physics.add.overlap(this.player, this.enemies, this.handlePlayerEnemyCollision as any, undefined, this);
+    // 设置碰撞（使用collider防止穿模）
+    this.physics.add.collider(this.player, this.enemies);
 
     // 初始化迷雾系统
     this.fogSystem = new FogSystem(this, this.player);
@@ -141,11 +141,6 @@ export class GameScene extends Phaser.Scene {
     });
 
     console.log(`生成了 ${enemyTypes.length} 个敌人`);
-  }
-
-  private handlePlayerEnemyCollision() {
-    // 碰撞已经在Enemy的update中处理了
-    // 这里可以添加额外的碰撞效果
   }
 
   private onPlayerAttack(data: { x: number; y: number; range: number; damage: number }) {
