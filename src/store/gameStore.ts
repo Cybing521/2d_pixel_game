@@ -4,7 +4,9 @@ import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { PlayerData, Item, EquippedItems } from '../types/entities';
 import type { Quest, ProgressData, SettingsData } from '../types/systems';
+import type { SkillTreeState, ClassType, ElementType, Skill } from '../types/skills';
 import { PLAYER_CONFIG } from '@constants/gameConfig';
+import { createInitialMastery } from '@/data/elements';
 
 interface GameState {
   // 游戏状态
@@ -83,6 +85,9 @@ interface GameState {
   // 设置
   settings: SettingsData;
   
+  // 技能树系统
+  skillTree: SkillTreeState | null;
+  
   // UI状态
   ui: {
     showInventory: boolean;
@@ -115,6 +120,17 @@ interface GameState {
   addUnallocatedPoint: () => void;
   consumeUnallocatedPoint: () => void;
   showLevelUpEffect: (data: any) => void;
+  // 技能树相关
+  selectClass: (classType: ClassType) => void;
+  addSkillPoints: (amount: number) => void;
+  spendSkillPoints: (amount: number) => void;
+  learnSkill: (skill: Skill) => void;
+  upgradeSkill: (skillId: string) => void;
+  equipSkill: (skillId: string, slot: number) => void;
+  unequipSkill: (slot: number) => void;
+  upgradeElementMastery: (element: ElementType, level: number, bonuses: any, expRequired: number) => void;
+  resetElementMastery: (element: ElementType) => void;
+  resetAllSkills: () => void;
   saveGame: () => void;
   loadGame: () => void;
 }
@@ -172,10 +188,12 @@ export const useGameStore = create<GameState>()(
       completedQuests: [],
       discoveredItems: [],
       exp: 0,
-      expToNextLevel: 100,
+      expToNextLevel: 50,
       unallocatedPoints: 0,
       recentChoices: [],
     },
+    
+    skillTree: null,  // 初始为null，选择职业后初始化
     
     settings: {
       volume: {
@@ -390,6 +408,100 @@ export const useGameStore = create<GameState>()(
       setTimeout(() => {
         useGameStore.setState({ levelUpEffect: null });
       }, 3000);
+    }),
+    
+    // ========== 技能树系统方法 ==========
+    
+    selectClass: (classType) => set((state) => {
+      // 初始化技能树
+      state.skillTree = {
+        selectedClass: classType,
+        classLevel: 1,
+        availablePoints: 0,
+        totalPointsSpent: 0,
+        fireMastery: createInitialMastery('fire'),
+        waterMastery: createInitialMastery('water'),
+        windMastery: createInitialMastery('wind'),
+        earthMastery: createInitialMastery('earth'),
+        learnedSkills: new Map(),
+        equippedSkills: [undefined, undefined, undefined, undefined],
+        skillCooldowns: new Map(),
+      };
+      console.log(`选择职业：${classType}`);
+    }),
+    
+    addSkillPoints: (amount) => set((state) => {
+      if (state.skillTree) {
+        state.skillTree.availablePoints += amount;
+      }
+    }),
+    
+    spendSkillPoints: (amount) => set((state) => {
+      if (state.skillTree) {
+        state.skillTree.availablePoints -= amount;
+        state.skillTree.totalPointsSpent += amount;
+      }
+    }),
+    
+    learnSkill: (skill) => set((state) => {
+      if (state.skillTree) {
+        state.skillTree.learnedSkills.set(skill.id, skill);
+      }
+    }),
+    
+    upgradeSkill: (skillId) => set((state) => {
+      if (state.skillTree) {
+        const skill = state.skillTree.learnedSkills.get(skillId);
+        if (skill) {
+          skill.currentLevel += 1;
+        }
+      }
+    }),
+    
+    equipSkill: (skillId, slot) => set((state) => {
+      if (state.skillTree) {
+        state.skillTree.equippedSkills[slot] = skillId;
+      }
+    }),
+    
+    unequipSkill: (slot) => set((state) => {
+      if (state.skillTree) {
+        state.skillTree.equippedSkills[slot] = undefined;
+      }
+    }),
+    
+    upgradeElementMastery: (element, level, bonuses, expRequired) => set((state) => {
+      if (state.skillTree) {
+        const masteryKey = `${element}Mastery` as keyof SkillTreeState;
+        const mastery = state.skillTree[masteryKey] as any;
+        if (mastery) {
+          mastery.level = level;
+          mastery.bonuses = bonuses;
+          mastery.expToNextLevel = expRequired;
+        }
+      }
+    }),
+    
+    resetElementMastery: (element) => set((state) => {
+      if (state.skillTree) {
+        const masteryKey = `${element}Mastery` as keyof SkillTreeState;
+        (state.skillTree[masteryKey] as any) = createInitialMastery(element);
+      }
+    }),
+    
+    resetAllSkills: () => set((state) => {
+      if (state.skillTree) {
+        const returnedPoints = state.skillTree.totalPointsSpent;
+        state.skillTree.availablePoints += returnedPoints;
+        state.skillTree.totalPointsSpent = 0;
+        state.skillTree.learnedSkills.clear();
+        state.skillTree.equippedSkills = [undefined, undefined, undefined, undefined];
+        state.skillTree.fireMastery = createInitialMastery('fire');
+        state.skillTree.waterMastery = createInitialMastery('water');
+        state.skillTree.windMastery = createInitialMastery('wind');
+        state.skillTree.earthMastery = createInitialMastery('earth');
+        console.log(`重置技能树，返还${returnedPoints}点技能点`);
+      }
     }),
     
     saveGame: () => {
