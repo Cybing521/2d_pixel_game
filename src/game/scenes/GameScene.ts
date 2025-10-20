@@ -26,6 +26,8 @@ export class GameScene extends Phaser.Scene {
     hasTeleport: boolean;
   }> = []; // 村庄列表
   private currentVillage: string | null = null; // 当前所在村庄
+  private trajectoryTimer: number = 0; // 轨迹记录计时器
+  private trajectoryInterval: number = 1000; // 轨迹记录间隔（毫秒）
 
   constructor() {
     super({ key: SCENE_KEYS.GAME });
@@ -609,6 +611,13 @@ export class GameScene extends Phaser.Scene {
     const playerX = this.player.x;
     const playerY = this.player.y;
     useGameStore.getState().updatePlayerPosition(playerX, playerY);
+    
+    // 定期记录轨迹（每秒一次）
+    this.trajectoryTimer += delta;
+    if (this.trajectoryTimer >= this.trajectoryInterval) {
+      useGameStore.getState().addTrajectoryPoint(playerX, playerY);
+      this.trajectoryTimer = 0;
+    }
     
     // 更新敌人位置到store
     const enemiesData = this.enemies.getChildren().map((enemy) => {

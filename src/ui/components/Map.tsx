@@ -77,6 +77,10 @@ export const Map: React.FC = () => {
   const playerPosition = useGameStore((state) => state.playerPosition);
   const enemies = useGameStore((state) => state.enemies);
   const questMarkers = useGameStore((state) => state.questMarkers);
+  const trajectory = useGameStore((state) => state.trajectory);
+  const mapMarkers = useGameStore((state) => state.mapMarkers);
+  const showTrajectory = useGameStore((state) => state.ui.showTrajectory);
+  const clearTrajectory = useGameStore((state) => state.clearTrajectory);
 
   // 地图状态
   const [zoom, setZoom] = useState(1);
@@ -364,8 +368,68 @@ export const Map: React.FC = () => {
       ctx.stroke();
     }
 
+    // 绘制历史轨迹（如果启用）
+    if (showTrajectory && trajectory.length > 1) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.lineWidth = 2 / zoom;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      ctx.beginPath();
+      const firstPoint = trajectory[0];
+      ctx.moveTo(firstPoint.x * baseScale, firstPoint.y * baseScale);
+      
+      for (let i = 1; i < trajectory.length; i++) {
+        const point = trajectory[i];
+        ctx.lineTo(point.x * baseScale, point.y * baseScale);
+        
+        // 轨迹淡化效果（越旧越淡）
+        const age = Date.now() - point.timestamp;
+        const maxAge = 300000; // 5分钟
+        const alpha = Math.max(0.1, 1 - age / maxAge);
+        ctx.globalAlpha = alpha * 0.3;
+      }
+      
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    
+    // 绘制自定义标注
+    mapMarkers.forEach((marker) => {
+      const mx = marker.x * baseScale;
+      const my = marker.y * baseScale;
+      
+      // 根据类型设置颜色
+      let color = 'rgba(255, 255, 255, 1)';
+      switch (marker.type) {
+        case 'important': color = 'rgba(255, 255, 0, 1)'; break;
+        case 'danger': color = 'rgba(255, 0, 0, 1)'; break;
+        case 'treasure': color = 'rgba(255, 215, 0, 1)'; break;
+        case 'note': color = 'rgba(100, 200, 255, 1)'; break;
+      }
+      
+      // 绘制标记图标
+      ctx.fillStyle = color;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+      ctx.lineWidth = 2 / zoom;
+      
+      ctx.beginPath();
+      ctx.arc(mx, my, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      
+      // 绘制标签
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(mx - 30, my - 25, 60, 16);
+      
+      ctx.fillStyle = color;
+      ctx.font = `${10 / zoom}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.fillText(marker.label, mx, my - 13);
+    });
+
     ctx.restore();
-  }, [playerPosition, progress.exploredAreas, enemies, questMarkers, zoom, offset, pathPoints, targetPoint]);
+  }, [playerPosition, progress.exploredAreas, enemies, questMarkers, zoom, offset, pathPoints, targetPoint, showTrajectory, trajectory, mapMarkers]);
 
   // 鼠标拖拽和悬停检测
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -640,11 +704,25 @@ export const Map: React.FC = () => {
           </div>
         )}
         
+        {/* 地图功能按钮 */}
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={() => toggleUI('showTrajectory')}
+            className={`px-3 py-1 text-xs rounded ${showTrajectory ? 'bg-blue-600' : 'bg-gray-700'} text-white`}
+          >
+            轨迹 ({trajectory.length})
+          </button>
+          <button onClick={clearTrajectory} className="px-3 py-1 bg-gray-700 text-white text-xs rounded">
+            清除
+          </button>
+          <span className="text-gray-400 text-xs self-center">标注: {mapMarkers.length}/100</span>
+        </div>
+        
         {/* 提示 */}
         <div className="mt-3 text-xs text-gray-500 text-center">
-          按 <kbd className="px-2 py-1 bg-gray-700 rounded">M</kbd> 关闭地图 | 
-          滚轮缩放 | 拖拽移动 | 悬停敌人查看名称 | 
-          <span className="text-yellow-400">右键设置路径</span>
+          按 <kbd className="px-2 py-1 bg-gray-700 rounded">M</kbd> 关闭 | 
+          滚轮缩放 | 拖拽移动 | 
+          <span className="text-yellow-400">右键路径</span>
         </div>
       </div>
     </div>

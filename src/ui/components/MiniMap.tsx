@@ -6,7 +6,10 @@ export const MiniMap: React.FC = () => {
   const playerPosition = useGameStore((state) => state.playerPosition);
   const progress = useGameStore((state) => state.progress);
   const enemies = useGameStore((state) => state.enemies);
+  const miniMapPosition = useGameStore((state) => state.miniMapPosition);
+  const setMiniMapPosition = useGameStore((state) => state.setMiniMapPosition);
   const toggleUI = useGameStore((state) => state.toggleUI);
+  const [showSettings, setShowSettings] = React.useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -157,9 +160,17 @@ export const MiniMap: React.FC = () => {
     toggleUI('showMap');
   };
   
+  // 根据位置设置样式
+  const positionClass = {
+    'top-right': 'top-20 right-4',
+    'top-left': 'top-20 left-4',
+    'bottom-right': 'bottom-4 right-4',
+    'bottom-left': 'bottom-4 left-4',
+  }[miniMapPosition];
+  
   return (
     <div 
-      className="fixed top-20 right-4 cursor-pointer hover:scale-105 transition-transform z-40"
+      className={`fixed ${positionClass} cursor-pointer hover:scale-105 transition-transform z-40`}
       onClick={handleClick}
       title="点击打开大地图 (M)"
     >
@@ -189,6 +200,50 @@ export const MiniMap: React.FC = () => {
           <span>村</span>
         </div>
       </div>
+      
+      {/* 位置设置按钮 */}
+      <button
+        className="absolute -bottom-24 left-0 right-0 mx-auto w-20 bg-gray-800 hover:bg-gray-700 text-white text-[10px] px-2 py-1 rounded"
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowSettings(!showSettings);
+        }}
+        title="切换小地图位置"
+      >
+        位置
+      </button>
+      
+      {/* 位置选择面板 */}
+      {showSettings && (
+        <div 
+          className="absolute -bottom-40 left-0 bg-gray-800 border border-gray-600 rounded p-2 text-[10px] text-white z-50"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="grid grid-cols-2 gap-1">
+            {[
+              { label: '左上', value: 'top-left' as const },
+              { label: '右上', value: 'top-right' as const },
+              { label: '左下', value: 'bottom-left' as const },
+              { label: '右下', value: 'bottom-right' as const },
+            ].map((pos) => (
+              <button
+                key={pos.value}
+                onClick={() => {
+                  setMiniMapPosition(pos.value);
+                  setShowSettings(false);
+                }}
+                className={`px-2 py-1 rounded ${
+                  miniMapPosition === pos.value
+                    ? 'bg-blue-600'
+                    : 'bg-gray-700 hover:bg-gray-600'
+                }`}
+              >
+                {pos.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

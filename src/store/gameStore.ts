@@ -38,6 +38,26 @@ interface GameState {
     type: 'objective' | 'npc' | 'area';
   }>;
   
+  // 历史轨迹
+  trajectory: Array<{
+    x: number;
+    y: number;
+    timestamp: number;
+  }>;
+  
+  // 地图标注
+  mapMarkers: Array<{
+    id: string;
+    x: number;
+    y: number;
+    type: 'important' | 'danger' | 'treasure' | 'note';
+    label: string;
+    createdAt: number;
+  }>;
+  
+  // 小地图位置
+  miniMapPosition: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  
   // 背包
   inventory: {
     items: (Item | null)[];
@@ -59,6 +79,7 @@ interface GameState {
     showSkillTree: boolean;
     showQuestLog: boolean;
     showMap: boolean;
+    showTrajectory: boolean;
   };
   
   // Actions
@@ -75,6 +96,11 @@ interface GameState {
   addQuest: (quest: Quest) => void;
   updateQuest: (questId: string, updates: Partial<Quest>) => void;
   toggleUI: (uiKey: keyof GameState['ui']) => void;
+  addTrajectoryPoint: (x: number, y: number) => void;
+  clearTrajectory: () => void;
+  addMapMarker: (x: number, y: number, type: string, label: string) => void;
+  removeMapMarker: (id: string) => void;
+  setMiniMapPosition: (position: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left') => void;
   saveGame: () => void;
   loadGame: () => void;
 }
@@ -110,6 +136,12 @@ export const useGameStore = create<GameState>()(
     
     questMarkers: [],
     
+    trajectory: [],
+    
+    mapMarkers: [],
+    
+    miniMapPosition: 'top-right',
+    
     inventory: {
       items: Array(20).fill(null),
       maxSlots: 20,
@@ -143,6 +175,7 @@ export const useGameStore = create<GameState>()(
       showSkillTree: false,
       showQuestLog: false,
       showMap: false,
+      showTrajectory: true,
     },
     
     startGame: () => set((state) => {
@@ -267,6 +300,48 @@ export const useGameStore = create<GameState>()(
       state.ui[uiKey] = !state.ui[uiKey];
     }),
     
+    addTrajectoryPoint: (x, y) => set((state) => {
+      state.trajectory.push({
+        x,
+        y,
+        timestamp: Date.now(),
+      });
+      
+      // 只保留最近1000个点
+      if (state.trajectory.length > 1000) {
+        state.trajectory.shift();
+      }
+    }),
+    
+    clearTrajectory: () => set((state) => {
+      state.trajectory = [];
+    }),
+    
+    addMapMarker: (x, y, type, label) => set((state) => {
+      // 检查标记数量限制
+      if (state.mapMarkers.length >= 100) {
+        console.warn('已达到标记上限（100个）');
+        return;
+      }
+      
+      state.mapMarkers.push({
+        id: `marker-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        x,
+        y,
+        type: type as 'important' | 'danger' | 'treasure' | 'note',
+        label,
+        createdAt: Date.now(),
+      });
+    }),
+    
+    removeMapMarker: (id) => set((state) => {
+      state.mapMarkers = state.mapMarkers.filter(m => m.id !== id);
+    }),
+    
+    setMiniMapPosition: (position) => set((state) => {
+      state.miniMapPosition = position;
+    }),
+    
     saveGame: () => {
       const state = get();
       // TODO: 使用SaveSystem保存
@@ -288,6 +363,9 @@ export const useGameStore = create<GameState>()(
       quests: state.quests,
       progress: state.progress,
       settings: state.settings,
+      trajectory: state.trajectory,
+      mapMarkers: state.mapMarkers,
+      miniMapPosition: state.miniMapPosition,
     }),
     version: 1, // 版本号，用于数据迁移
   }
