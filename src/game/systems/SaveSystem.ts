@@ -1,5 +1,6 @@
 // 存档系统
-import { SaveData } from '@types/systems';
+// import { SaveData } from '@types/systems';
+import {SaveData} from '@/types/systems';
 
 export class SaveSystem {
   private static SAVE_KEY = 'forgotten-pixel-realm-save';

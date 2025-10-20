@@ -86,20 +86,30 @@ export const Map: React.FC = () => {
           {/* 世界边界 */}
           <div className="absolute inset-0 border-2 border-red-500/50 pointer-events-none" />
 
-          {/* 起始村庄标记（玩家出生点） */}
+          {/* 复活点标记（起始村庄） */}
           <div
             className="absolute"
-            style={{ left: 400 * scale - 12, top: 300 * scale - 12 }}
-            title="起始村庄"
+            style={{ left: 400 * scale - 16, top: 300 * scale - 16 }}
+            title="复活点 - 起始村庄"
           >
-            <div className="w-6 h-6 flex items-center justify-center">
-              <span className="text-xl">🏘️</span>
+            {/* 复活点光圈 */}
+            <div className="absolute inset-0 w-8 h-8 bg-yellow-500/20 rounded-full animate-pulse" />
+            <div className="absolute inset-0 w-8 h-8 border-2 border-yellow-400 rounded-full" />
+            
+            {/* 村庄图标 */}
+            <div className="absolute inset-0 w-8 h-8 flex items-center justify-center">
+              <span className="text-2xl drop-shadow-lg">🏘️</span>
+            </div>
+            
+            {/* 十字标记 */}
+            <div className="absolute inset-0 w-8 h-8 flex items-center justify-center">
+              <div className="w-2 h-2 bg-yellow-400 rounded-full" />
             </div>
           </div>
         </div>
 
         {/* 图例 */}
-        <div className="mt-4 flex gap-6 text-sm">
+        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-green-500 rounded-full border border-white" />
             <span className="text-gray-300">玩家位置</span>
@@ -109,8 +119,18 @@ export const Map: React.FC = () => {
             <span className="text-gray-300">已探索区域</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-2xl leading-none">🏘️</span>
-            <span className="text-gray-300">村庄</span>
+            <div className="relative w-4 h-4">
+              <div className="absolute inset-0 bg-yellow-500/20 rounded-full" />
+              <div className="absolute inset-0 border-2 border-yellow-400 rounded-full" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-1 h-1 bg-yellow-400 rounded-full" />
+              </div>
+            </div>
+            <span className="text-gray-300">复活点</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xl leading-none">🏘️</span>
+            <span className="text-gray-300">村庄（安全区）</span>
           </div>
         </div>
 

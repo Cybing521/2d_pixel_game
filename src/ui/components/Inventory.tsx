@@ -1,7 +1,7 @@
 // 背包界面组件
 import React from 'react';
 import { useGameStore } from '@store/gameStore';
-import { Item } from '@types/entities';
+import { Item } from '@/types/entities';
 import { RARITY_COLORS } from '@constants/gameConfig';
 
 export const Inventory: React.FC = () => {

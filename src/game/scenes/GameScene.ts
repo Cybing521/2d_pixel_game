@@ -14,6 +14,7 @@ export class GameScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private lastExploredTile: string = '';
   private respawnPoint: { x: number; y: number } = { x: 400, y: 300 }; // 复活点
+  private village: { x: number; y: number; radius: number } = { x: 400, y: 300, radius: 150 }; // 村庄
 
   constructor() {
     super({ key: SCENE_KEYS.GAME });
@@ -28,6 +29,9 @@ export class GameScene extends Phaser.Scene {
 
     // 创建简单的地面
     this.createGround();
+    
+    // 创建村庄标记
+    this.createVillage();
 
     // 创建玩家
     this.player = new Player(this, 400, 300);
@@ -86,6 +90,50 @@ export class GameScene extends Phaser.Scene {
 
     graphics.strokePath();
   }
+  
+  private createVillage() {
+    const { x, y, radius } = this.village;
+    
+    // 村庄安全区域（黄色圆圈）
+    const villageCircle = this.add.circle(x, y, radius, 0xffff00, 0.1);
+    villageCircle.setStrokeStyle(3, 0xffff00, 0.5);
+    villageCircle.setDepth(-1);
+    
+    // 村庄标记文字
+    const villageText = this.add.text(x, y - radius - 30, '🏘️ 起始村庄', {
+      fontSize: '24px',
+      color: '#ffff00',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 4,
+    });
+    villageText.setOrigin(0.5);
+    villageText.setDepth(10);
+    
+    // 复活点标记（中心点）
+    const respawnMarker = this.add.circle(x, y, 8, 0xffff00, 1);
+    respawnMarker.setStrokeStyle(2, 0xffffff);
+    respawnMarker.setDepth(10);
+    
+    // 脉动效果
+    this.tweens.add({
+      targets: respawnMarker,
+      scale: 1.5,
+      alpha: 0.5,
+      duration: 1000,
+      yoyo: true,
+      repeat: -1,
+    });
+    
+    // 添加提示文字（靠近时显示）
+    const hintText = this.add.text(x, y + radius + 20, '安全区域 - 敌人不会进入', {
+      fontSize: '16px',
+      color: '#ffff00',
+      fontStyle: 'italic',
+    });
+    hintText.setOrigin(0.5);
+    hintText.setAlpha(0.7);
+  }
 
   private spawnEnemies() {
     // 生成几个测试敌人
@@ -131,20 +179,34 @@ export class GameScene extends Phaser.Scene {
       },
     ];
 
-    // 在不同位置生成敌人
+    // 在不同位置生成敌人（远离村庄）
     const spawnPositions = [
-      { x: 600, y: 400 },
-      { x: 800, y: 600 },
-      { x: 500, y: 700 },
+      { x: 700, y: 400 },   // 东侧
+      { x: 900, y: 600 },   // 东南
+      { x: 600, y: 800 },   // 南侧
     ];
 
     enemyTypes.forEach((enemyData, index) => {
       const pos = spawnPositions[index];
-      const enemy = new Enemy(this, pos.x, pos.y, enemyData);
-      this.enemies.add(enemy);
+      
+      // 确保敌人不在村庄安全区生成
+      const distanceToVillage = Phaser.Math.Distance.Between(
+        pos.x, pos.y, 
+        this.village.x, this.village.y
+      );
+      
+      if (distanceToVillage > this.village.radius) {
+        const enemy = new Enemy(this, pos.x, pos.y, enemyData);
+        this.enemies.add(enemy);
+      }
     });
 
-    console.log(`生成了 ${enemyTypes.length} 个敌人`);
+    console.log(`生成了 ${this.enemies.getLength()} 个敌人（村庄外）`);
+  }
+  
+  private isInVillage(x: number, y: number): boolean {
+    const distance = Phaser.Math.Distance.Between(x, y, this.village.x, this.village.y);
+    return distance < this.village.radius;
   }
 
   private onPlayerAttack(data: { x: number; y: number; range: number; damage: number }) {
@@ -242,7 +304,7 @@ export class GameScene extends Phaser.Scene {
     
     // 提升属性
     const newMaxHealth = player.maxHealth + 10;
-    const newMaxMana = player.maxMana + 5;
+    const newMaxMana =(player.maxMana??0) +5;
     
     store.updatePlayerStats({
       level: newLevel,
@@ -312,6 +374,22 @@ export class GameScene extends Phaser.Scene {
     this.enemies.getChildren().forEach((enemy) => {
       if (enemy instanceof Enemy) {
         enemy.update(time, delta, this.player);
+        
+        // 检查敌人是否试图进入村庄
+        if (this.isInVillage(enemy.x, enemy.y)) {
+          // 将敌人推出村庄
+          const angle = Phaser.Math.Angle.Between(
+            this.village.x, this.village.y,
+            enemy.x, enemy.y
+          );
+          
+          // 计算边界位置
+          const pushX = this.village.x + Math.cos(angle) * this.village.radius;
+          const pushY = this.village.y + Math.sin(angle) * this.village.radius;
+          
+          enemy.setPosition(pushX, pushY);
+          enemy.setVelocity(0, 0);
+        }
       }
     });
 
