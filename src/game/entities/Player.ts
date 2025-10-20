@@ -207,9 +207,33 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private onDeath() {
-    // TODO: 处理玩家死亡
     console.log('Player died');
+    
+    // 玩家死亡效果
     this.setTint(0x000000);
+    this.setVelocity(0, 0);  // 停止移动
+    
+    // 禁用输入
+    this.disableBody(true, false);
+    
+    // 死亡动画
+    this.scene.tweens.add({
+      targets: this,
+      alpha: 0.3,
+      angle: 90,
+      duration: 500,
+    });
+    
+    // 发射死亡事件
+    this.scene.events.emit('player-died');
+  }
+  
+  // 复活时调用
+  respawn() {
+    this.enableBody(true, this.x, this.y, true, true);
+    this.setAlpha(1);
+    this.setAngle(0);
+    this.clearTint();
   }
 
   // Getters

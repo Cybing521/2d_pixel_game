@@ -43,11 +43,28 @@ export const HUD: React.FC = () => {
             </div>
           </div>
 
-          {/* 等级 */}
-          <div className="mt-2 text-center">
-            <span className="text-yellow-400 text-sm font-bold">
-              Lv.{player.level}
-            </span>
+          {/* 等级和经验条 */}
+          <div className="mt-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-yellow-400 text-sm font-bold">
+                Lv.{player.level}
+              </span>
+              <span className="text-yellow-300 text-xs font-mono">
+                {player.exp}/{player.expToNextLevel}
+              </span>
+            </div>
+            {/* 经验条 */}
+            <div className="w-48 h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-600">
+              <div
+                className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 transition-all duration-500"
+                style={{ width: `${(player.exp / player.expToNextLevel) * 100}%` }}
+              />
+            </div>
+            <div className="text-center mt-1">
+              <span className="text-yellow-300 text-xs">
+                {Math.floor((player.exp / player.expToNextLevel) * 100)}%
+              </span>
+            </div>
           </div>
         </div>
       </div>

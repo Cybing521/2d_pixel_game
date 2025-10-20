@@ -13,6 +13,7 @@ export class GameScene extends Phaser.Scene {
   private fogSystem!: FogSystem;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private lastExploredTile: string = '';
+  private respawnPoint: { x: number; y: number } = { x: 400, y: 300 }; // 复活点
 
   constructor() {
     super({ key: SCENE_KEYS.GAME });
@@ -48,6 +49,9 @@ export class GameScene extends Phaser.Scene {
     
     // 监听玩家攻击事件
     this.events.on('player-attack', this.onPlayerAttack, this);
+    
+    // 监听玩家死亡事件
+    this.events.on('player-died', this.onPlayerDied, this);
 
     // 相机跟随
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
@@ -157,16 +161,147 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private onPlayerDied() {
+    console.log('玩家死亡，3秒后在复活点复活...');
+    
+    // 显示死亡提示
+    const deathText = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY,
+      '你死了...\n\n3秒后复活',
+      {
+        fontSize: '32px',
+        color: '#ff0000',
+        fontStyle: 'bold',
+        align: 'center',
+      }
+    );
+    deathText.setOrigin(0.5);
+    deathText.setScrollFactor(0);
+    deathText.setDepth(2000);
+    
+    // 3秒后复活
+    this.time.delayedCall(3000, () => {
+      deathText.destroy();
+      this.respawnPlayer();
+    });
+  }
+  
+  private respawnPlayer() {
+    // 复活玩家
+    this.player.setPosition(this.respawnPoint.x, this.respawnPoint.y);
+    this.player.respawn();
+    
+    // 恢复满血
+    const store = useGameStore.getState();
+    store.updatePlayerStats({ 
+      health: store.player.maxHealth,
+      mana: store.player.maxMana || store.player.maxMana,
+    });
+    
+    // 清除所有敌人
+    this.enemies.clear(true, true);
+    
+    // 重新生成敌人
+    this.spawnEnemies();
+    
+    console.log('玩家已在复活点复活');
+  }
+
   private onEnemyKilled(data: { enemyId: string; expReward: number }) {
     // 玩家获得经验
     const store = useGameStore.getState();
     const currentExp = store.player.exp;
-    store.updatePlayerStats({ exp: currentExp + data.expReward });
+    const newExp = currentExp + data.expReward;
     
-    console.log(`获得 ${data.expReward} 经验值`);
+    store.updatePlayerStats({ exp: newExp });
     
-    // TODO: 检查升级
-    // TODO: 处理掉落物品
+    console.log(`获得 ${data.expReward} 经验值，当前经验：${newExp}/${store.player.expToNextLevel}`);
+    
+    // 检查升级
+    this.checkLevelUp();
+  }
+  
+  private checkLevelUp() {
+    const store = useGameStore.getState();
+    const player = store.player;
+    
+    if (player.exp >= player.expToNextLevel) {
+      this.levelUp();
+    }
+  }
+  
+  private levelUp() {
+    const store = useGameStore.getState();
+    const player = store.player;
+    
+    // 升级
+    const newLevel = player.level + 1;
+    const remainingExp = player.exp - player.expToNextLevel;
+    const newExpToNextLevel = this.calculateExpToNextLevel(newLevel);
+    
+    // 提升属性
+    const newMaxHealth = player.maxHealth + 10;
+    const newMaxMana = player.maxMana + 5;
+    
+    store.updatePlayerStats({
+      level: newLevel,
+      exp: remainingExp,
+      expToNextLevel: newExpToNextLevel,
+      maxHealth: newMaxHealth,
+      maxMana: newMaxMana,
+      health: newMaxHealth,  // 升级回满血
+      mana: newMaxMana,      // 升级回满蓝
+    });
+    
+    // 升级特效
+    const levelUpText = this.add.text(
+      this.player.x,
+      this.player.y - 50,
+      `升级！Lv.${newLevel}`,
+      {
+        fontSize: '32px',
+        color: '#ffff00',
+        fontStyle: 'bold',
+        stroke: '#ff0000',
+        strokeThickness: 4,
+      }
+    );
+    levelUpText.setOrigin(0.5);
+    levelUpText.setDepth(1000);
+    
+    // 升级动画
+    this.tweens.add({
+      targets: levelUpText,
+      y: levelUpText.y - 80,
+      alpha: 0,
+      scale: 1.5,
+      duration: 2000,
+      onComplete: () => {
+        levelUpText.destroy();
+      },
+    });
+    
+    // 升级光效
+    const levelUpCircle = this.add.circle(this.player.x, this.player.y, 10, 0xffff00, 0.8);
+    levelUpCircle.setDepth(999);
+    
+    this.tweens.add({
+      targets: levelUpCircle,
+      scale: 10,
+      alpha: 0,
+      duration: 1000,
+      onComplete: () => {
+        levelUpCircle.destroy();
+      },
+    });
+    
+    console.log(`🎉 升级到 Lv.${newLevel}！HP: ${newMaxHealth}, MP: ${newMaxMana}`);
+  }
+  
+  private calculateExpToNextLevel(level: number): number {
+    // 经验值公式：100 * 1.5^(level-1)
+    return Math.floor(100 * Math.pow(1.5, level - 1));
   }
 
   update(time: number, delta: number) {
