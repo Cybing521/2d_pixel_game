@@ -30,7 +30,7 @@ pnpm dev
 
 ### 🔥 快速入门
 - **[快速启动指南](./docs/快速启动指南.md)** - 如何运行项目（必读）
-- **[项目进度报告](./docs/项目进度报告.md)** - 当前状态和下一步计划
+- **[已完成功能总结](./docs/已完成功能总结.md)** - 当前状态（v0.3.2）
 - **[前端开发文档](./docs/前端开发文档.md)** - 项目结构和开发指南
 
 ### 🎮 游戏设计
@@ -43,9 +43,10 @@ pnpm dev
 - **[功能特性列表](./docs/功能特性列表.md)** - 160+功能清单
 - **[开发路线图](./docs/开发路线图.md)** - 10-13个月开发计划
 
-### 🔧 开发规则
-- **[游戏设计规则](./.cursor/rules/game-design-rules.mdc)** - 设计原则（AI必读）
-- **[技术架构规则](./.cursor/rules/tech-architecture-rules.mdc)** - 代码规范（AI必读）
+### 🔧 Windsurf开发规则（AI必读）⭐⭐⭐
+- **[项目全局规则](./.cursor/rules/project-overview-rules.mdc)** - 项目概览和规范（必读）
+- **[游戏设计规则](./.cursor/rules/game-design-rules.mdc)** - 设计原则
+- **[技术架构规则](./.cursor/rules/tech-architecture-rules.mdc)** - 代码规范
 
 ---
 

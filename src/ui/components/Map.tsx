@@ -1,6 +1,67 @@
 // 增强版地图组件 - 支持缩放、拖拽、敌人显示等
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useGameStore } from '@store/gameStore';
+
+// 区域合并算法 - 合并相邻探索区域
+function mergeAdjacentAreas(areas: string[]): Array<{ x: number; y: number; width: number; height: number }> {
+  if (areas.length === 0) return [];
+  
+  // 将字符串坐标转换为数字坐标
+  const areaSet = new Set(areas);
+  const areaCoords = areas.map(area => {
+    const [x, y] = area.split('-').map(Number);
+    return { x, y };
+  });
+  
+  const merged: Array<{ x: number; y: number; width: number; height: number }> = [];
+  const processed = new Set<string>();
+  
+  // 对每个区域尝试合并
+  for (const area of areaCoords) {
+    const key = `${area.x}-${area.y}`;
+    if (processed.has(key)) continue;
+    
+    // 尝试水平合并
+    let width = 1;
+    while (areaSet.has(`${area.x + width}-${area.y}`)) {
+      width++;
+    }
+    
+    // 尝试垂直合并（对整个水平条）
+    let height = 1;
+    let canMergeRow = true;
+    while (canMergeRow) {
+      for (let i = 0; i < width; i++) {
+        if (!areaSet.has(`${area.x + i}-${area.y + height}`)) {
+          canMergeRow = false;
+          break;
+        }
+      }
+      if (canMergeRow) height++;
+    }
+    
+    // 标记所有被合并的区域
+    for (let dy = 0; dy < height; dy++) {
+      for (let dx = 0; dx < width; dx++) {
+        processed.add(`${area.x + dx}-${area.y + dy}`);
+      }
+    }
+    
+    merged.push({ x: area.x, y: area.y, width, height });
+  }
+  
+  return merged;
+}
+
+// 区域名称配置
+const AREA_LABELS = [
+  { x: 400, y: 300, name: '起始村庄', color: 'text-yellow-400' },
+  { x: 800, y: 300, name: '东部森林', color: 'text-green-400' },
+  { x: 400, y: 700, name: '南部平原', color: 'text-blue-400' },
+  { x: 1200, y: 300, name: '远东山脉', color: 'text-gray-400' },
+  { x: 400, y: 1100, name: '南方沼泽', color: 'text-emerald-600' },
+  { x: 100, y: 300, name: '西部荒野', color: 'text-orange-400' },
+];
 
 export const Map: React.FC = () => {
   const isVisible = useGameStore((state) => state.ui.showMap);
@@ -15,7 +76,11 @@ export const Map: React.FC = () => {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [hoveredEnemy, setHoveredEnemy] = useState<{ id: string; name: string; x: number; y: number } | null>(null);
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cacheCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const cacheValidRef = useRef(false);
   
   // 地图配置
   const mapWidth = 600;
@@ -23,7 +88,60 @@ export const Map: React.FC = () => {
   const worldWidth = 2000;
   const baseScale = mapWidth / worldWidth;
 
+  // 合并探索区域（优化渲染）
+  const mergedAreas = useMemo(() => {
+    return mergeAdjacentAreas(progress.exploredAreas);
+  }, [progress.exploredAreas]);
+
   if (!isVisible) return null;
+
+  // 创建缓存Canvas（静态内容）
+  const getCacheCanvas = () => {
+    if (!cacheCanvasRef.current) {
+      cacheCanvasRef.current = document.createElement('canvas');
+      cacheCanvasRef.current.width = mapWidth;
+      cacheCanvasRef.current.height = mapHeight;
+    }
+    return cacheCanvasRef.current;
+  };
+
+  // 绘制静态内容到缓存Canvas
+  const drawStaticContent = () => {
+    const cacheCanvas = getCacheCanvas();
+    const ctx = cacheCanvas.getContext('2d');
+    if (!ctx) return;
+
+    // 清空缓存
+    ctx.clearRect(0, 0, mapWidth, mapHeight);
+
+    // 绘制背景网格
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= mapWidth; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, mapHeight);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= mapHeight; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(mapWidth, y);
+      ctx.stroke();
+    }
+
+    // 绘制世界边界
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, mapWidth, mapHeight);
+
+    cacheValidRef.current = true;
+  };
+
+  // 当探索区域改变时，重新生成缓存
+  useEffect(() => {
+    cacheValidRef.current = false;
+  }, [progress.exploredAreas]);
 
   // 绘制地图到Canvas（性能优化）
   useEffect(() => {
@@ -41,37 +159,24 @@ export const Map: React.FC = () => {
     ctx.translate(offset.x, offset.y);
     ctx.scale(zoom, zoom);
 
-    // 绘制背景网格
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 1 / zoom;
-    for (let x = 0; x <= mapWidth; x += 40) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, mapHeight);
-      ctx.stroke();
+    // 绘制缓存的静态内容
+    if (!cacheValidRef.current) {
+      drawStaticContent();
     }
-    for (let y = 0; y <= mapHeight; y += 40) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(mapWidth, y);
-      ctx.stroke();
-    }
+    const cacheCanvas = getCacheCanvas();
+    ctx.drawImage(cacheCanvas, 0, 0);
 
-    // 绘制世界边界
-    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-    ctx.lineWidth = 2 / zoom;
-    ctx.strokeRect(0, 0, mapWidth, mapHeight);
-
-    // 绘制探索区域
+    // 绘制探索区域（使用合并算法）
     ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
     ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
     ctx.lineWidth = 1 / zoom;
-    progress.exploredAreas.forEach((area) => {
-      const [tileX, tileY] = area.split('-').map(Number);
-      const x = (tileX * 64 + 32) * baseScale - 6.4;
-      const y = (tileY * 64 + 32) * baseScale - 6.4;
-      ctx.fillRect(x, y, 12.8, 12.8);
-      ctx.strokeRect(x, y, 12.8, 12.8);
+    mergedAreas.forEach((area) => {
+      const x = (area.x * 64 + 32) * baseScale - 6.4;
+      const y = (area.y * 64 + 32) * baseScale - 6.4;
+      const w = area.width * 64 * baseScale;
+      const h = area.height * 64 * baseScale;
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeRect(x, y, w, h);
     });
 
     // 绘制村庄（起始村庄）
@@ -144,18 +249,54 @@ export const Map: React.FC = () => {
     ctx.restore();
   }, [playerPosition, progress.exploredAreas, enemies, questMarkers, zoom, offset]);
 
-  // 鼠标拖拽
+  // 鼠标拖拽和悬停检测
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setOffset({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
-    });
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // 获取鼠标在canvas中的位置
+    const rect = canvas.getBoundingClientRect();
+    const canvasX = e.clientX - rect.left;
+    const canvasY = e.clientY - rect.top;
+
+    // 拖拽
+    if (isDragging) {
+      setOffset({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+      return;
+    }
+
+    // 检测鼠标是否悬停在敌人上
+    const worldX = (canvasX - offset.x) / zoom;
+    const worldY = (canvasY - offset.y) / zoom;
+
+    let foundEnemy = null;
+    for (const enemy of enemies) {
+      const enemyX = enemy.x * baseScale;
+      const enemyY = enemy.y * baseScale;
+      const distance = Math.sqrt(
+        Math.pow(worldX - enemyX, 2) + Math.pow(worldY - enemyY, 2)
+      );
+      
+      if (distance < 5) { // 5像素的检测范围
+        foundEnemy = {
+          id: enemy.id,
+          name: enemy.name,
+          x: canvasX,
+          y: canvasY,
+        };
+        break;
+      }
+    }
+
+    setHoveredEnemy(foundEnemy);
   };
 
   const handleMouseUp = () => {
@@ -218,19 +359,44 @@ export const Map: React.FC = () => {
           
           {/* 区域名称标签（覆盖层） */}
           <div className="absolute inset-0 pointer-events-none">
-            {/* 起始区域 */}
+            {AREA_LABELS.map((label, index) => {
+              const x = label.x * baseScale * zoom + offset.x;
+              const y = label.y * baseScale * zoom + offset.y - 25;
+              
+              // 只显示在可视范围内的标签
+              if (x < -100 || x > mapWidth + 100 || y < -50 || y > mapHeight + 50) {
+                return null;
+              }
+              
+              return (
+                <div
+                  key={index}
+                  className={`absolute ${label.color} text-xs font-bold bg-black/60 px-2 py-1 rounded shadow-lg`}
+                  style={{
+                    left: `${x}px`,
+                    top: `${y}px`,
+                    transform: 'translateX(-50%)',
+                  }}
+                >
+                  {label.name}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 敌人悬停提示 */}
+          {hoveredEnemy && (
             <div
-              className="absolute text-yellow-400 text-xs font-bold bg-black/50 px-2 py-1 rounded"
+              className="absolute bg-gray-900 border-2 border-red-500 text-white text-xs px-3 py-2 rounded-lg shadow-xl pointer-events-none z-10"
               style={{
-                left: `${(400 * baseScale * zoom + offset.x)}px`,
-                top: `${(300 * baseScale * zoom + offset.y - 25)}px`,
+                left: `${hoveredEnemy.x + 10}px`,
+                top: `${hoveredEnemy.y - 30}px`,
               }}
             >
-              起始村庄
+              <div className="font-bold text-red-400">{hoveredEnemy.name}</div>
+              <div className="text-gray-400 text-[10px] mt-0.5">敌对单位</div>
             </div>
-            
-            {/* 其他区域可以继续添加 */}
-          </div>
+          )}
         </div>
 
         {/* 图例 */}
@@ -263,14 +429,14 @@ export const Map: React.FC = () => {
 
         {/* 统计信息 */}
         <div className="mt-3 flex justify-between text-xs text-gray-400">
-          <span>探索进度: {progress.exploredAreas.length} 个区域</span>
+          <span>探索进度: {progress.exploredAreas.length} 个区域（合并后: {mergedAreas.length}）</span>
           <span>玩家位置: ({Math.floor(playerPosition.x)}, {Math.floor(playerPosition.y)})</span>
         </div>
 
         {/* 提示 */}
         <div className="mt-3 text-xs text-gray-500 text-center">
           按 <kbd className="px-2 py-1 bg-gray-700 rounded">M</kbd> 关闭地图 | 
-          滚轮缩放 | 拖拽移动
+          滚轮缩放 | 拖拽移动 | 悬停敌人查看名称
         </div>
       </div>
     </div>
