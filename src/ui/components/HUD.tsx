@@ -72,8 +72,8 @@ export const HUD: React.FC = () => {
         </div>
       </div>
 
-      {/* 右上角：快捷键提示 */}
-      <div className="absolute top-4 right-4 pointer-events-auto">
+      {/* 右下角：快捷键提示 */}
+      <div className="absolute bottom-4 right-4 pointer-events-auto">
         <div className="bg-black/60 p-3 rounded-lg border border-white/20 backdrop-blur-sm">
           <div className="text-xs text-gray-300 space-y-1">
             <div><kbd className="px-2 py-1 bg-gray-700 rounded">I</kbd> 背包</div>

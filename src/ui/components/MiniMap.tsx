@@ -162,12 +162,12 @@ export const MiniMap: React.FC = () => {
     toggleUI('showMap');
   };
   
-  // 根据位置设置样式
+  // 根据位置设置样式（调整顶部位置，留出空间给标题）
   const positionClass = {
-    'top-right': 'top-20 right-4',
-    'top-left': 'top-20 left-4',
-    'bottom-right': 'bottom-4 right-4',
-    'bottom-left': 'bottom-4 left-4',
+    'top-right': 'top-8 right-4',
+    'top-left': 'top-8 left-4',
+    'bottom-right': 'bottom-28 right-4',  // 留出空间给图例和按钮
+    'bottom-left': 'bottom-28 left-4',
   }[miniMapPosition];
   
   return (

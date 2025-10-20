@@ -29,6 +29,10 @@ export class GameScene extends Phaser.Scene {
   private currentVillage: string | null = null; // 当前所在村庄
   private trajectoryTimer: number = 0; // 轨迹记录计时器
   private trajectoryInterval: number = 1000; // 轨迹记录间隔（毫秒）
+  private enemyRespawnTimer: number = 0; // 怪物重生计时器
+  private enemyRespawnInterval: number = 5000; // 怪物重生间隔（5秒）
+  private maxEnemies: number = 15; // 最大怪物数量
+  private minEnemies: number = 8; // 最小怪物数量（低于此值开始生成）
 
   constructor() {
     super({ key: SCENE_KEYS.GAME });
@@ -291,76 +295,155 @@ export class GameScene extends Phaser.Scene {
     springLabel.setDepth(6);
   }
 
-  private spawnEnemies() {
-    // 生成几个测试敌人
-    const enemyTypes: EnemyData[] = [
+  private spawnEnemies(count?: number) {
+    // 如果没有指定数量，生成到最大数量
+    const targetCount = count || this.maxEnemies;
+    const currentCount = this.enemies.getLength();
+    const spawnCount = Math.min(targetCount - currentCount, targetCount);
+    
+    if (spawnCount <= 0) return;
+
+    // 敌人类型模板（权重系统）
+    const enemyTemplates = [
       {
-        id: 'fog_wisp_1',
         name: '迷雾幽灵',
-        type: 'basic',
+        type: 'basic' as const,
         health: 30,
         maxHealth: 30,
         attack: 5,
         defense: 2,
         speed: 50,
-        aiType: 'patrol',
+        aiType: 'patrol' as const,
         expReward: 10,
-        dropTable: [],
+        weight: 50, // 权重：50%
       },
       {
-        id: 'shadow_wolf_1',
         name: '暗影之狼',
-        type: 'aggressive',
+        type: 'aggressive' as const,
         health: 50,
         maxHealth: 50,
         attack: 10,
         defense: 5,
         speed: 80,
-        aiType: 'aggressive',
+        aiType: 'aggressive' as const,
         expReward: 20,
-        dropTable: [],
+        weight: 30, // 权重：30%
       },
       {
-        id: 'fog_wisp_2',
-        name: '迷雾幽灵',
-        type: 'basic',
-        health: 30,
-        maxHealth: 30,
-        attack: 5,
-        defense: 2,
-        speed: 50,
-        aiType: 'patrol',
-        expReward: 10,
-        dropTable: [],
+        name: '迷雾蝙蝠',
+        type: 'basic' as const,
+        health: 20,
+        maxHealth: 20,
+        attack: 3,
+        defense: 1,
+        speed: 100,
+        aiType: 'patrol' as const,
+        expReward: 8,
+        weight: 20, // 权重：20%
       },
     ];
 
-    // 在不同位置生成敌人（远离村庄）
-    const spawnPositions = [
-      { x: 700, y: 400 },   // 东侧
-      { x: 900, y: 600 },   // 东南
-      { x: 600, y: 800 },   // 南侧
-    ];
+    let spawned = 0;
+    let attempts = 0;
+    const maxAttempts = spawnCount * 10; // 防止死循环
 
-    enemyTypes.forEach((enemyData, index) => {
-      const pos = spawnPositions[index];
+    while (spawned < spawnCount && attempts < maxAttempts) {
+      attempts++;
       
-      // 确保敌人不在任何已解锁村庄的安全区生成
-      const isInAnyVillage = this.villages.some(village => {
+      // 随机选择敌人类型（基于权重）
+      const template = this.getRandomEnemyTemplate(enemyTemplates);
+      
+      // 随机生成位置（在世界范围内，但远离村庄和玩家）
+      const pos = this.getRandomSpawnPosition();
+      
+      if (!pos) continue; // 没有合适的位置
+      
+      // 创建敌人数据
+      const enemyData: EnemyData = {
+        id: `enemy_${Date.now()}_${spawned}`,
+        name: template.name,
+        type: template.type,
+        health: template.health,
+        maxHealth: template.maxHealth,
+        attack: template.attack,
+        defense: template.defense,
+        speed: template.speed,
+        aiType: template.aiType,
+        expReward: template.expReward,
+        dropTable: [],
+      };
+      
+      // 生成敌人
+      const enemy = new Enemy(this, pos.x, pos.y, enemyData);
+      enemy.setData('id', enemyData.id);
+      enemy.setData('name', enemyData.name);
+      this.enemies.add(enemy);
+      spawned++;
+    }
+
+    console.log(`🐺 生成了 ${spawned} 个敌人，当前总数：${this.enemies.getLength()}`);
+  }
+  
+  /**
+   * 基于权重随机选择敌人模板
+   */
+  private getRandomEnemyTemplate(templates: Array<{ weight: number; [key: string]: any }>) {
+    const totalWeight = templates.reduce((sum, t) => sum + t.weight, 0);
+    let random = Math.random() * totalWeight;
+    
+    for (const template of templates) {
+      random -= template.weight;
+      if (random <= 0) {
+        return template;
+      }
+    }
+    
+    return templates[0]; // fallback
+  }
+  
+  /**
+   * 获取随机生成位置（避开村庄和玩家）
+   */
+  private getRandomSpawnPosition(): { x: number; y: number } | null {
+    const worldBounds = { minX: 100, maxX: 1900, minY: 100, maxY: 1900 };
+    const minDistanceFromPlayer = 300; // 距离玩家至少300px
+    const minDistanceFromVillage = 200; // 距离村庄至少200px
+    
+    for (let i = 0; i < 50; i++) { // 最多尝试50次
+      const x = Phaser.Math.Between(worldBounds.minX, worldBounds.maxX);
+      const y = Phaser.Math.Between(worldBounds.minY, worldBounds.maxY);
+      
+      // 检查是否距离玩家太近
+      const distToPlayer = Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y);
+      if (distToPlayer < minDistanceFromPlayer) continue;
+      
+      // 检查是否在村庄安全区内
+      const isInVillage = this.villages.some(village => {
         if (!village.unlocked) return false;
-        const distance = Phaser.Math.Distance.Between(pos.x, pos.y, village.x, village.y);
-        return distance < village.radius;
+        const dist = Phaser.Math.Distance.Between(x, y, village.x, village.y);
+        return dist < village.radius + minDistanceFromVillage;
       });
       
-      if (!isInAnyVillage) {
-        const enemy = new Enemy(this, pos.x, pos.y, enemyData);
-        enemy.setData('id', enemyData.id);
-        enemy.setData('name', enemyData.name);
-        this.enemies.add(enemy);
+      if (!isInVillage) {
+        return { x, y };
       }
-    });
-
-    console.log(`生成了 ${this.enemies.getLength()} 个敌人（村庄外）`);
+    }
+    
+    return null; // 找不到合适位置
+  }
+  
+  /**
+   * 检查并重新生成敌人
+   */
+  private checkAndRespawnEnemies() {
+    const currentCount = this.enemies.getLength();
+    
+    // 如果怪物数量低于最小值，生成新怪物
+    if (currentCount < this.minEnemies) {
+      const spawnCount = this.maxEnemies - currentCount;
+      console.log(`⚡ 怪物数量过低 (${currentCount}/${this.minEnemies})，生成 ${spawnCount} 个新怪物`);
+      this.spawnEnemies(spawnCount);
+    }
   }
   
   private isInVillage(x: number, y: number): { inVillage: boolean; villageId?: string } {
@@ -540,6 +623,13 @@ export class GameScene extends Phaser.Scene {
     if (this.trajectoryTimer >= this.trajectoryInterval) {
       useGameStore.getState().addTrajectoryPoint(playerX, playerY);
       this.trajectoryTimer = 0;
+    }
+    
+    // 定期检查并重生怪物（每5秒检查一次）
+    this.enemyRespawnTimer += delta;
+    if (this.enemyRespawnTimer >= this.enemyRespawnInterval) {
+      this.checkAndRespawnEnemies();
+      this.enemyRespawnTimer = 0;
     }
     
     // 更新敌人位置到store

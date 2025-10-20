@@ -1,10 +1,10 @@
 // 游戏配置常量
 
 export const GAME_CONFIG = {
-  WIDTH: 1280,
-  HEIGHT: 720,
+  WIDTH: 1600,  // 增加基础分辨率
+  HEIGHT: 900,
   TILE_SIZE: 16,
-  ZOOM: 2,
+  ZOOM: 1.5,   // 调整缩放以匹配新分辨率
 } as const;
 
 export const PLAYER_CONFIG = {
