@@ -1,6 +1,6 @@
 {
   "name": "forgotten-pixel-realm",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "遗忘的像素魔法大陆 - 一个关于迷雾、魔法与记忆的像素探索游戏",
   "type": "module",
   "scripts": {

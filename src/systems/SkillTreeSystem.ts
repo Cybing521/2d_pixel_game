@@ -301,8 +301,12 @@ export class SkillTreeSystem {
    * 根据ID获取技能
    */
   static getSkillById(skillId: string): Skill | null {
-    // 目前只有战士技能，后续添加其他职业
-    const allSkills = getAllWarriorSkills();
+    const store = useGameStore.getState();
+    const classType = store.skillTree?.selectedClass;
+    
+    if (!classType) return null;
+    
+    const allSkills = this.getClassSkills(classType);
     return allSkills.find(s => s.id === skillId) || null;
   }
 
@@ -313,7 +317,15 @@ export class SkillTreeSystem {
     switch (classType) {
       case 'warrior':
         return getAllWarriorSkills();
-      // TODO: 添加其他职业
+      case 'mage':
+        const { getAllMageSkills } = require('@/data/skills/mageSkills');
+        return getAllMageSkills();
+      case 'rogue':
+        const { getAllRogueSkills } = require('@/data/skills/rogueSkills');
+        return getAllRogueSkills();
+      case 'priest':
+        const { getAllPriestSkills } = require('@/data/skills/priestSkills');
+        return getAllPriestSkills();
       default:
         return [];
     }
