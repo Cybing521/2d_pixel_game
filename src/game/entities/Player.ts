@@ -18,7 +18,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     down: Phaser.Input.Keyboard.Key;
     left: Phaser.Input.Keyboard.Key;
     right: Phaser.Input.Keyboard.Key;
+    attack: Phaser.Input.Keyboard.Key;
   };
+  
+  // 攻击相关
+  private attackRange: number = 40;
+  private attackDamage: number = 15;
+  private lastAttackTime: number = 0;
+  private attackCooldown: number = 500; // 0.5秒攻击间隔
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     // 使用简单的图形作为占位符
@@ -54,11 +61,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       down: this.scene.input.keyboard!.addKey(DEFAULT_KEYBINDINGS.MOVE_DOWN),
       left: this.scene.input.keyboard!.addKey(DEFAULT_KEYBINDINGS.MOVE_LEFT),
       right: this.scene.input.keyboard!.addKey(DEFAULT_KEYBINDINGS.MOVE_RIGHT),
+      attack: this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
     };
   }
 
   update(time: number, delta: number) {
     this.handleMovement();
+    this.handleAttack(time);
   }
 
   private handleMovement() {
@@ -120,6 +129,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   gainExp(amount: number) {
     this.exp += amount;
     // TODO: 检查升级
+  }
+
+  private handleAttack(time: number) {
+    // 检查攻击键
+    if (this.keys.attack.isDown && time - this.lastAttackTime > this.attackCooldown) {
+      this.attack();
+      this.lastAttackTime = time;
+    }
+  }
+  
+  attack() {
+    // 攻击动画（简单的缩放效果）
+    this.scene.tweens.add({
+      targets: this,
+      scaleX: 2.3,
+      scaleY: 2.3,
+      duration: 100,
+      yoyo: true,
+    });
+    
+    // 发射政击事件
+    this.scene.events.emit('player-attack', {
+      x: this.x,
+      y: this.y,
+      range: this.attackRange,
+      damage: this.attackDamage,
+    });
+    
+    console.log('玩家攻击！');
   }
 
   private onDeath() {
