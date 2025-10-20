@@ -213,7 +213,7 @@ export class GameScene extends Phaser.Scene {
     });
   }
   
-  private createTeleportPoint(x: number, y: number, villageId: string) {
+  private createTeleportPoint(x: number, y: number, _villageId: string) {
     // 传送点底座
     const teleportBase = this.add.circle(x, y, 25, 0xff00ff, 0.3);
     teleportBase.setStrokeStyle(3, 0xff00ff);
@@ -374,7 +374,7 @@ export class GameScene extends Phaser.Scene {
     return { inVillage: false };
   }
   
-  private healPlayerInSpring(village: typeof this.villages[0], delta: number) {
+  private healPlayerInSpring(_village: typeof this.villages[0], delta: number) {
     const store = useGameStore.getState();
     const currentHealth = store.player.health;
     const maxHealth = store.player.maxHealth;
@@ -483,24 +483,16 @@ export class GameScene extends Phaser.Scene {
     
     if (leveledUp) {
       console.log('🎉 玩家升级！');
+      
+      // 升级时给予技能点
+      const player = useGameStore.getState().player;
+      useGameStore.getState().addSkillPoints(1); // 每级+1技能点
+      
+      console.log(`获得1技能点！当前等级：${player.level}`);
     } else {
       const progress = useGameStore.getState().progress;
       console.log(`获得 ${data.expReward} 经验值，当前经验：${progress.exp}/${progress.expToNextLevel}`);
     }
-  }
-  
-  // 升级逻辑已移到LevelSystem，这里保留空方法以防其他地方调用
-  private checkLevelUp() {
-    // 由LevelSystem.addExp自动处理
-  }
-  
-  private levelUp() {
-    // 由LevelSystem.handleLevelUp自动处理
-  }
-  
-  // 经验计算已移到LevelSystem
-  private calculateExpToNextLevel(level: number): number {
-    return LevelSystem.calculateExpToNextLevel(level);
   }
 
   update(time: number, delta: number) {

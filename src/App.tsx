@@ -1,5 +1,5 @@
 // React应用根组件
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Game } from './game';
 import { GameUI } from './ui/components/GameUI';
 import { MainMenu } from './ui/components/MainMenu';
