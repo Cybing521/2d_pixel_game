@@ -1,5 +1,5 @@
-// 地图组件
-import React from 'react';
+// 增强版地图组件 - 支持缩放、拖拽、敌人显示等
+import React, { useState, useRef, useEffect } from 'react';
 import { useGameStore } from '@store/gameStore';
 
 export const Map: React.FC = () => {
@@ -7,143 +7,270 @@ export const Map: React.FC = () => {
   const toggleUI = useGameStore((state) => state.toggleUI);
   const progress = useGameStore((state) => state.progress);
   const playerPosition = useGameStore((state) => state.playerPosition);
+  const enemies = useGameStore((state) => state.enemies);
+  const questMarkers = useGameStore((state) => state.questMarkers);
+
+  // 地图状态
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // 地图配置
+  const mapWidth = 600;
+  const mapHeight = 600;
+  const worldWidth = 2000;
+  const baseScale = mapWidth / worldWidth;
 
   if (!isVisible) return null;
 
-  // 地图尺寸（游戏世界2000x2000，缩小到400x400显示）
-  const mapWidth = 400;
-  const mapHeight = 400;
-  const worldWidth = 2000;
-  const scale = mapWidth / worldWidth;
+  // 绘制地图到Canvas（性能优化）
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  // 玩家位置（实时）
-  const playerX = playerPosition.x * scale;
-  const playerY = playerPosition.y * scale;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-  // 探索区域（实时）
-  const exploredAreas = progress.exploredAreas.map((area) => {
-    // 解析区域坐标（格式如 "x-y"），转换为像素坐标
-    const [tileX, tileY] = area.split('-').map(Number);
-    // 每个区域64像素，取中心点
-    const x = (tileX * 64 + 32) * scale;
-    const y = (tileY * 64 + 32) * scale;
-    return { x, y };
-  });
+    // 清空画布
+    ctx.clearRect(0, 0, mapWidth, mapHeight);
+    ctx.save();
+
+    // 应用变换（缩放和平移）
+    ctx.translate(offset.x, offset.y);
+    ctx.scale(zoom, zoom);
+
+    // 绘制背景网格
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1 / zoom;
+    for (let x = 0; x <= mapWidth; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, mapHeight);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= mapHeight; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(mapWidth, y);
+      ctx.stroke();
+    }
+
+    // 绘制世界边界
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    ctx.lineWidth = 2 / zoom;
+    ctx.strokeRect(0, 0, mapWidth, mapHeight);
+
+    // 绘制探索区域
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+    ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
+    ctx.lineWidth = 1 / zoom;
+    progress.exploredAreas.forEach((area) => {
+      const [tileX, tileY] = area.split('-').map(Number);
+      const x = (tileX * 64 + 32) * baseScale - 6.4;
+      const y = (tileY * 64 + 32) * baseScale - 6.4;
+      ctx.fillRect(x, y, 12.8, 12.8);
+      ctx.strokeRect(x, y, 12.8, 12.8);
+    });
+
+    // 绘制村庄（起始村庄）
+    const villageX = 400 * baseScale;
+    const villageY = 300 * baseScale;
+    
+    // 村庄光圈
+    ctx.fillStyle = 'rgba(234, 179, 8, 0.2)';
+    ctx.strokeStyle = 'rgba(234, 179, 8, 0.8)';
+    ctx.lineWidth = 2 / zoom;
+    ctx.beginPath();
+    ctx.arc(villageX, villageY, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    
+    // 村庄中心点
+    ctx.fillStyle = 'rgba(234, 179, 8, 1)';
+    ctx.beginPath();
+    ctx.arc(villageX, villageY, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 绘制敌人位置
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
+    enemies.forEach((enemy) => {
+      const x = enemy.x * baseScale;
+      const y = enemy.y * baseScale;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // 绘制任务标记
+    ctx.fillStyle = 'rgba(251, 146, 60, 1)';
+    ctx.strokeStyle = 'rgba(251, 146, 60, 1)';
+    ctx.lineWidth = 2 / zoom;
+    questMarkers.forEach((marker) => {
+      const x = marker.x * baseScale;
+      const y = marker.y * baseScale;
+      
+      // 绘制菱形标记
+      ctx.beginPath();
+      ctx.moveTo(x, y - 5);
+      ctx.lineTo(x + 5, y);
+      ctx.lineTo(x, y + 5);
+      ctx.lineTo(x - 5, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    });
+
+    // 绘制玩家位置
+    const playerX = playerPosition.x * baseScale;
+    const playerY = playerPosition.y * baseScale;
+    
+    // 玩家光圈
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
+    ctx.beginPath();
+    ctx.arc(playerX, playerY, 8, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 玩家中心点
+    ctx.fillStyle = 'rgba(34, 197, 94, 1)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+    ctx.lineWidth = 2 / zoom;
+    ctx.beginPath();
+    ctx.arc(playerX, playerY, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+  }, [playerPosition, progress.exploredAreas, enemies, questMarkers, zoom, offset]);
+
+  // 鼠标拖拽
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setOffset({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // 滚轮缩放
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setZoom((prev) => Math.max(0.5, Math.min(3, prev + delta)));
+  };
+
+  // 重置视图
+  const resetView = () => {
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+  };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50">
-      <div className="bg-gray-900 border-4 border-gray-700 rounded-lg p-6 max-w-2xl">
+      <div className="bg-gray-900 border-4 border-gray-700 rounded-lg p-6 max-w-4xl">
         {/* 标题栏 */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-white">地图</h2>
-          <button
-            onClick={() => toggleUI('showMap')}
-            className="text-gray-400 hover:text-white text-2xl"
-          >
-            ✕
-          </button>
+          <div>
+            <h2 className="text-2xl font-bold text-white">世界地图</h2>
+            <p className="text-xs text-gray-400 mt-1">
+              滚轮缩放 | 拖拽移动 | 当前缩放: {(zoom * 100).toFixed(0)}%
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={resetView}
+              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm"
+            >
+              重置视图
+            </button>
+            <button
+              onClick={() => toggleUI('showMap')}
+              className="text-gray-400 hover:text-white text-2xl"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* 地图画布 */}
-        <div className="relative bg-gray-950 border-2 border-gray-600 rounded" style={{ width: mapWidth, height: mapHeight }}>
-          {/* 背景网格 */}
-          <svg className="absolute inset-0" width={mapWidth} height={mapHeight}>
-            <defs>
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
-              </pattern>
-            </defs>
-            <rect width={mapWidth} height={mapHeight} fill="url(#grid)" />
-          </svg>
-
-          {/* 已探索区域 */}
-          {exploredAreas.map((area, index) => (
+        <div className="relative">
+          <canvas
+            ref={canvasRef}
+            width={mapWidth}
+            height={mapHeight}
+            className="bg-gray-950 border-2 border-gray-600 rounded cursor-move"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onWheel={handleWheel}
+          />
+          
+          {/* 区域名称标签（覆盖层） */}
+          <div className="absolute inset-0 pointer-events-none">
+            {/* 起始区域 */}
             <div
-              key={index}
-              className="absolute bg-blue-500/30 border border-blue-400/50 rounded-sm"
+              className="absolute text-yellow-400 text-xs font-bold bg-black/50 px-2 py-1 rounded"
               style={{
-                left: area.x - 6.4,
-                top: area.y - 6.4,
-                width: 12.8,
-                height: 12.8,
+                left: `${(400 * baseScale * zoom + offset.x)}px`,
+                top: `${(300 * baseScale * zoom + offset.y - 25)}px`,
               }}
-            />
-          ))}
-
-          {/* 玩家位置 */}
-          <div
-            className="absolute w-4 h-4 bg-green-500 rounded-full border-2 border-white"
-            style={{
-              left: playerX - 8,
-              top: playerY - 8,
-              boxShadow: '0 0 10px rgba(34, 197, 94, 0.8)',
-            }}
-          >
-            {/* 脉动效果 */}
-            <div className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
-          </div>
-
-          {/* 世界边界 */}
-          <div className="absolute inset-0 border-2 border-red-500/50 pointer-events-none" />
-
-          {/* 复活点标记（起始村庄） */}
-          <div
-            className="absolute"
-            style={{ left: 400 * scale - 16, top: 300 * scale - 16 }}
-            title="复活点 - 起始村庄"
-          >
-            {/* 复活点光圈 */}
-            <div className="absolute inset-0 w-8 h-8 bg-yellow-500/20 rounded-full animate-pulse" />
-            <div className="absolute inset-0 w-8 h-8 border-2 border-yellow-400 rounded-full" />
-            
-            {/* 村庄图标 */}
-            <div className="absolute inset-0 w-8 h-8 flex items-center justify-center">
-              <span className="text-2xl drop-shadow-lg">🏘️</span>
+            >
+              起始村庄
             </div>
             
-            {/* 十字标记 */}
-            <div className="absolute inset-0 w-8 h-8 flex items-center justify-center">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full" />
-            </div>
+            {/* 其他区域可以继续添加 */}
           </div>
         </div>
 
         {/* 图例 */}
-        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+        <div className="mt-4 grid grid-cols-3 gap-3 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-green-500 rounded-full border border-white" />
-            <span className="text-gray-300">玩家位置</span>
+            <span className="text-gray-300">玩家</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-red-500 rounded-full" />
+            <span className="text-gray-300">敌人 ({enemies.length})</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-blue-500/50 border border-blue-400" />
-            <span className="text-gray-300">已探索区域</span>
+            <span className="text-gray-300">已探索</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="relative w-4 h-4">
-              <div className="absolute inset-0 bg-yellow-500/20 rounded-full" />
-              <div className="absolute inset-0 border-2 border-yellow-400 rounded-full" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-1 h-1 bg-yellow-400 rounded-full" />
-              </div>
-            </div>
-            <span className="text-gray-300">复活点</span>
+            <div className="w-3 h-3 bg-yellow-500 rounded-full border border-yellow-400" />
+            <span className="text-gray-300">村庄</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xl leading-none">🏘️</span>
-            <span className="text-gray-300">村庄（安全区）</span>
+            <div className="w-3 h-3 bg-orange-500 rotate-45" />
+            <span className="text-gray-300">任务 ({questMarkers.length})</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 border-2 border-red-500/50" />
+            <span className="text-gray-300">世界边界</span>
           </div>
         </div>
 
-        {/* 探索进度 */}
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-400">
-            探索进度: {progress.exploredAreas.length} 个区域
-          </p>
+        {/* 统计信息 */}
+        <div className="mt-3 flex justify-between text-xs text-gray-400">
+          <span>探索进度: {progress.exploredAreas.length} 个区域</span>
+          <span>玩家位置: ({Math.floor(playerPosition.x)}, {Math.floor(playerPosition.y)})</span>
         </div>
 
         {/* 提示 */}
-        <div className="mt-4 text-xs text-gray-500 text-center">
-          按 <kbd className="px-2 py-1 bg-gray-700 rounded">M</kbd> 关闭地图
+        <div className="mt-3 text-xs text-gray-500 text-center">
+          按 <kbd className="px-2 py-1 bg-gray-700 rounded">M</kbd> 关闭地图 | 
+          滚轮缩放 | 拖拽移动
         </div>
       </div>
     </div>

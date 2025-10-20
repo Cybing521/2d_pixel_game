@@ -21,6 +21,23 @@ interface GameState {
     y: number;
   };
   
+  // 敌人位置（实时）
+  enemies: Array<{
+    id: string;
+    x: number;
+    y: number;
+    name: string;
+  }>;
+  
+  // 任务标记
+  questMarkers: Array<{
+    id: string;
+    x: number;
+    y: number;
+    name: string;
+    type: 'objective' | 'npc' | 'area';
+  }>;
+  
   // 背包
   inventory: {
     items: (Item | null)[];
@@ -88,6 +105,10 @@ export const useGameStore = create<GameState>()(
       x: 400,
       y: 300,
     },
+    
+    enemies: [],
+    
+    questMarkers: [],
     
     inventory: {
       items: Array(20).fill(null),

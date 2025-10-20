@@ -351,6 +351,8 @@ export class GameScene extends Phaser.Scene {
       
       if (!isInAnyVillage) {
         const enemy = new Enemy(this, pos.x, pos.y, enemyData);
+        enemy.setData('id', enemyData.id);
+        enemy.setData('name', enemyData.name);
         this.enemies.add(enemy);
       }
     });
@@ -607,6 +609,21 @@ export class GameScene extends Phaser.Scene {
     const playerX = this.player.x;
     const playerY = this.player.y;
     useGameStore.getState().updatePlayerPosition(playerX, playerY);
+    
+    // 更新敌人位置到store
+    const enemiesData = this.enemies.getChildren().map((enemy) => {
+      if (enemy instanceof Enemy) {
+        return {
+          id: enemy.getData('id') || `enemy_${enemy.x}_${enemy.y}`,
+          x: enemy.x,
+          y: enemy.y,
+          name: enemy.getData('name') || '敌人',
+        };
+      }
+      return null;
+    }).filter(Boolean) as Array<{ id: string; x: number; y: number; name: string }>;
+    
+    useGameStore.setState({ enemies: enemiesData });
     
     // 检查玩家是否在村庄中（泉水回血）
     const playerVillageCheck = this.isInVillage(playerX, playerY);
