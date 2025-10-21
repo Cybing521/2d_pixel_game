@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { PLAYER_CONFIG } from '@constants/gameConfig';
 import { DEFAULT_KEYBINDINGS } from '@constants/keybindings';
 import { useGameStore } from '@store/gameStore';
+import { DirectionHelper, type Direction8 } from '../utils/DirectionHelper';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private speed: number = PLAYER_CONFIG.SPEED;
@@ -12,6 +13,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private maxMana: number = PLAYER_CONFIG.STARTING_MANA;
   private level: number = PLAYER_CONFIG.STARTING_LEVEL;
   private exp: number = 0;
+
+  // 方向控制（8方向）
+  private currentDirection: Direction8 = 'south'; // 默认朝向南方（下方）
+  private spritePrefix: string = 'hero';
 
   // 输入控制
   private keys!: {
@@ -29,30 +34,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private attackCooldown: number = 500; // 0.5秒攻击间隔
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    // 使用简单的图形作为占位符
-    super(scene, x, y, 'placeholder');
+    // 使用英雄角色的南向精灵图作为默认
+    super(scene, x, y, 'hero-south');
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
     this.setCollideWorldBounds(true);
-    this.setScale(2);
-    
-    // 绘制玩家占位符
-    this.drawPlaceholder();
+    this.setScale(2); // 放大2倍以便看清
     
     this.setupInput();
-  }
-
-  private drawPlaceholder() {
-    // 创建一个简单的方块作为玩家占位符
-    const graphics = this.scene.add.graphics();
-    graphics.fillStyle(0x00ff00);
-    graphics.fillRect(-8, -8, 16, 16);
-    graphics.generateTexture('player-placeholder', 16, 16);
-    graphics.destroy();
     
-    this.setTexture('player-placeholder');
+    console.log('✅ 玩家角色已创建（使用真实精灵图）');
   }
 
   private setupInput() {
@@ -66,7 +59,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     };
   }
 
-  update(time: number, delta: number) {
+  update(time: number, _delta: number) {
     this.handleMovement();
     this.handleAttack(time);
   }
@@ -95,6 +88,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.setVelocity(velocityX, velocityY);
+    
+    // 根据速度更新方向和精灵图
+    this.updateDirection(velocityX, velocityY);
+  }
+
+  /**
+   * 根据速度向量更新角色朝向和精灵图
+   */
+  private updateDirection(velocityX: number, velocityY: number) {
+    const newDirection = DirectionHelper.getDirectionFromVelocity(velocityX, velocityY);
+    
+    // 只有在移动且方向改变时才更新纹理
+    if (newDirection && newDirection !== this.currentDirection) {
+      this.currentDirection = newDirection;
+      const textureKey = DirectionHelper.getTextureKey(this.spritePrefix, newDirection);
+      this.setTexture(textureKey);
+    }
   }
 
   takeDamage(amount: number) {

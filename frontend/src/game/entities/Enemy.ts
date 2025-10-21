@@ -2,12 +2,17 @@
 import Phaser from 'phaser';
 import type { EnemyData } from '@/types/entities';
 import type { Player } from './Player';
+import { DirectionHelper, type Direction8 } from '../utils/DirectionHelper';
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private enemyData: EnemyData;
   private health: number;
   private maxHealth: number;
   private isDead: boolean = false;
+  
+  // 方向控制（8方向）
+  private currentDirection: Direction8 = 'south';
+  private spritePrefix: string;
   
   // AI 相关
   private aiType: 'patrol' | 'aggressive' | 'defensive';
@@ -21,12 +26,17 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private attackCooldown: number = 1000; // 1秒攻击间隔
 
   constructor(scene: Phaser.Scene, x: number, y: number, enemyData: EnemyData) {
-    super(scene, x, y, 'enemy-placeholder');
+    // 根据敌人ID确定精灵前缀
+    const spritePrefix = enemyData.id === 'slime' ? 'slime' : 'enemy-goblin';
+    const initialTexture = enemyData.id === 'slime' ? 'slime-south' : 'enemy-goblin';
+    
+    super(scene, x, y, initialTexture);
     
     this.enemyData = enemyData;
     this.health = enemyData.health;
     this.maxHealth = enemyData.health;
     this.aiType = enemyData.aiType;
+    this.spritePrefix = spritePrefix;
     
     // 添加到场景
     scene.add.existing(this);
@@ -35,24 +45,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
     this.setScale(2);
     
-    // 绘制敌人占位符
-    this.drawPlaceholder();
-    
     // 设置巡逻路径
     if (this.aiType === 'patrol') {
       this.setupPatrolPath(x, y);
     }
-  }
-
-  private drawPlaceholder() {
-    // 创建红色方块作为敌人占位符
-    const graphics = this.scene.add.graphics();
-    graphics.fillStyle(0xff0000);
-    graphics.fillRect(-8, -8, 16, 16);
-    graphics.generateTexture(`enemy-${this.enemyData.id}`, 16, 16);
-    graphics.destroy();
     
-    this.setTexture(`enemy-${this.enemyData.id}`);
+    console.log(`✅ ${enemyData.name} 已创建（${enemyData.id === 'slime' ? '使用真实精灵图' : '使用临时占位符'}）`);
   }
 
   private setupPatrolPath(startX: number, startY: number) {
@@ -136,6 +134,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     
     // 移动到巡逻点
     this.scene.physics.moveTo(this, target.x, target.y, this.enemyData.speed);
+    
+    // 更新方向（基于目标位置）
+    this.updateDirectionToTarget(target.x, target.y);
   }
 
   private chasePlayer(player: Player) {
@@ -152,6 +153,29 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     
     // 追击玩家
     this.scene.physics.moveTo(this, player.x, player.y, this.enemyData.speed);
+    
+    // 更新方向（基于玩家位置）
+    this.updateDirectionToTarget(player.x, player.y);
+  }
+
+  /**
+   * 根据目标位置更新敌人朝向（仅对史莱姆等有8方向精灵图的敌人有效）
+   */
+  private updateDirectionToTarget(targetX: number, targetY: number) {
+    // 只有史莱姆才有8方向精灵图
+    if (this.spritePrefix !== 'slime') return;
+    
+    // 计算速度向量
+    const velocityX = targetX - this.x;
+    const velocityY = targetY - this.y;
+    
+    const newDirection = DirectionHelper.getDirectionFromVelocity(velocityX, velocityY);
+    
+    if (newDirection && newDirection !== this.currentDirection) {
+      this.currentDirection = newDirection;
+      const textureKey = DirectionHelper.getTextureKey(this.spritePrefix, newDirection);
+      this.setTexture(textureKey);
+    }
   }
 
   private tryAttack(time: number, player: Player) {

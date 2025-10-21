@@ -59,83 +59,39 @@ export class BootScene extends Phaser.Scene {
   }
 
   private loadAssets() {
-    // 🎨 增强版临时精灵 - 使用Canvas绘制更精美的游戏元素
+    // 🎨 加载真实的像素艺术角色精灵图
     
-    // ========== 玩家精灵（更精致的设计）==========
-    const playerCanvas = this.textures.createCanvas('player', 32, 32);
-    if (playerCanvas) {
-      const ctx = playerCanvas.getContext();
-      // 身体（蓝色）
-      ctx.fillStyle = '#3498db';
-      ctx.fillRect(8, 8, 16, 20);
-      // 头部（浅蓝色）
-      ctx.fillStyle = '#5dade2';
-      ctx.fillRect(10, 4, 12, 8);
-      // 眼睛
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(12, 6, 3, 3);
-      ctx.fillRect(17, 6, 3, 3);
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(13, 7, 1, 1);
-      ctx.fillRect(18, 7, 1, 1);
-      // 腿
-      ctx.fillStyle = '#2980b9';
-      ctx.fillRect(10, 28, 4, 4);
-      ctx.fillRect(18, 28, 4, 4);
-      // 边框
-      ctx.strokeStyle = '#2c3e50';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(8, 8, 16, 20);
-      playerCanvas.refresh();
-    }
+    // ========== 玩家角色（8方向）==========
+    this.load.image('hero-south', '/assets/sprites/hero/south.png');
+    this.load.image('hero-west', '/assets/sprites/hero/west.png');
+    this.load.image('hero-east', '/assets/sprites/hero/east.png');
+    this.load.image('hero-north', '/assets/sprites/hero/north.png');
+    this.load.image('hero-south-east', '/assets/sprites/hero/south-east.png');
+    this.load.image('hero-north-east', '/assets/sprites/hero/north-east.png');
+    this.load.image('hero-north-west', '/assets/sprites/hero/north-west.png');
+    this.load.image('hero-south-west', '/assets/sprites/hero/south-west.png');
     
-    // ========== 史莱姆敌人（可爱风格）==========
-    const slimeCanvas = this.textures.createCanvas('enemy-slime', 32, 32);
-    if (slimeCanvas) {
-      const ctx = slimeCanvas.getContext();
-      // 身体（绿色半圆）
-      ctx.fillStyle = '#2ecc71';
-      ctx.beginPath();
-      ctx.arc(16, 20, 12, Math.PI, 0);
-      ctx.closePath();
-      ctx.fill();
-      // 底部阴影
-      ctx.fillStyle = '#27ae60';
-      ctx.fillRect(6, 26, 20, 4);
-      // 眼睛
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(11, 16, 3, 0, Math.PI * 2);
-      ctx.arc(21, 16, 3, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#000000';
-      ctx.beginPath();
-      ctx.arc(11, 17, 1.5, 0, Math.PI * 2);
-      ctx.arc(21, 17, 1.5, 0, Math.PI * 2);
-      ctx.fill();
-      // 高光
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      ctx.beginPath();
-      ctx.arc(10, 12, 4, 0, Math.PI * 2);
-      ctx.fill();
-      slimeCanvas.refresh();
-    }
+    // ========== 史莱姆敌人（8方向）==========
+    this.load.image('slime-south', '/assets/sprites/slime/south.png');
+    this.load.image('slime-west', '/assets/sprites/slime/west.png');
+    this.load.image('slime-east', '/assets/sprites/slime/east.png');
+    this.load.image('slime-north', '/assets/sprites/slime/north.png');
+    this.load.image('slime-south-east', '/assets/sprites/slime/south-east.png');
+    this.load.image('slime-north-east', '/assets/sprites/slime/north-east.png');
+    this.load.image('slime-north-west', '/assets/sprites/slime/north-west.png');
+    this.load.image('slime-south-west', '/assets/sprites/slime/south-west.png');
     
-    // ========== 哥布林敌人 ==========
+    // ========== 保留临时哥布林敌人 ==========
     const goblinCanvas = this.textures.createCanvas('enemy-goblin', 32, 32);
     if (goblinCanvas) {
       const ctx = goblinCanvas.getContext();
-      // 身体（灰绿色）
       ctx.fillStyle = '#7f8c8d';
       ctx.fillRect(8, 12, 16, 16);
-      // 头部
       ctx.fillStyle = '#95a5a6';
       ctx.fillRect(10, 6, 12, 10);
-      // 眼睛（红色）
       ctx.fillStyle = '#e74c3c';
       ctx.fillRect(12, 9, 3, 2);
       ctx.fillRect(17, 9, 3, 2);
-      // 武器（灰色）
       ctx.fillStyle = '#34495e';
       ctx.fillRect(4, 14, 4, 8);
       ctx.fillRect(24, 14, 4, 8);
@@ -286,23 +242,12 @@ export class BootScene extends Phaser.Scene {
       heartCanvas.refresh();
     }
     
-    console.log('✅ 增强版彩色精灵已创建');
-    console.log('📦 包含: 玩家、敌人(史莱姆/哥布林)、环境、道具');
-    console.log('💡 提示: 查看 docs/资源更新指南.md 了解如何添加真实精灵图');
-    
-    // 🔥 当你准备好真实资源后，使用以下代码替换上面的临时方案：
-    /*
-    this.load.image('player', '/assets/sprites/player/idle.png');
-    this.load.image('enemy', '/assets/sprites/enemies/slime.png');
-    this.load.image('ground', '/assets/tilesets/grass.png');
-    this.load.image('tree', '/assets/sprites/environment/tree.png');
-    
-    // 如果使用精灵表（动画）
-    this.load.spritesheet('player-walk', '/assets/sprites/player/walk.png', {
-      frameWidth: 32,
-      frameHeight: 32,
-    });
-    */
+    console.log('✅ 真实像素艺术角色已加载');
+    console.log('👾 英雄角色: 8方向精灵图（32x32px）');
+    console.log('🟢 史莱姆敌人: 8方向精灵图（32x32px）');
+    console.log('🎮 支持: south, west, east, north + 4个对角方向');
+    console.log('📦 保留临时资源: 哥布林、环境、道具');
+    console.log('💡 提示: 角色已支持8方向移动，可根据速度向量自动切换方向');
   }
 
   create() {
