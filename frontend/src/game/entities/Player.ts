@@ -158,8 +158,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   gainExp(amount: number) {
-    this.exp += amount;
-    // TODO: 检查升级
+    const { LevelSystem } = require('@/systems/LevelSystem');
+    const didLevelUp = LevelSystem.addExp(amount);
+    
+    if (didLevelUp) {
+      // 同步最新的等级到实体
+      const { useGameStore } = require('@store/gameStore');
+      const newLevel = useGameStore.getState().player.level;
+      this.level = newLevel;
+      
+      // 显示升级特效（在Player位置）
+      this.showLevelUp(newLevel);
+    }
   }
 
   /**
@@ -170,14 +180,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const levelUpText = this.scene.add.text(
       this.x, 
       this.y - 60, 
-      '★ LEVEL UP ★',
+      '★ LEVEL UP! ★',
       {
-        fontSize: '24px',
+        fontSize: '28px',
         color: '#FFD700',
         fontStyle: 'bold',
         fontFamily: 'monospace',
         stroke: '#000000',
-        strokeThickness: 4,
+        strokeThickness: 5,
       }
     );
     levelUpText.setOrigin(0.5);
@@ -186,45 +196,88 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // 创建等级文字
     const levelText = this.scene.add.text(
       this.x,
-      this.y - 35,
+      this.y - 30,
       `Lv.${newLevel - 1} → Lv.${newLevel}`,
       {
-        fontSize: '16px',
+        fontSize: '18px',
         color: '#FFFFFF',
         fontStyle: 'bold',
         fontFamily: 'monospace',
         stroke: '#000000',
-        strokeThickness: 3,
+        strokeThickness: 4,
       }
     );
     levelText.setOrigin(0.5);
     levelText.setDepth(1000);
     
-    // 动画效果
+    // 创建HP/MP恢复提示
+    const { useGameStore } = require('@store/gameStore');
+    const levelUpEffect = useGameStore.getState().levelUpEffect;
+    
+    if (levelUpEffect) {
+      const restoreText = this.scene.add.text(
+        this.x,
+        this.y - 5,
+        `❤️ +${Math.floor(levelUpEffect.healthRestore)}% HP  💧 +${Math.floor(levelUpEffect.manaRestore)}% MP`,
+        {
+          fontSize: '14px',
+          color: '#00FF00',
+          fontStyle: 'bold',
+          fontFamily: 'monospace',
+          stroke: '#000000',
+          strokeThickness: 3,
+        }
+      );
+      restoreText.setOrigin(0.5);
+      restoreText.setDepth(1000);
+      
+      this.scene.tweens.add({
+        targets: restoreText,
+        y: '-=30',
+        alpha: { from: 1, to: 0 },
+        duration: 2000,
+        delay: 500,
+        onComplete: () => {
+          restoreText.destroy();
+        },
+      });
+    }
+    
+    // 动画效果 - 更华丽
     this.scene.tweens.add({
       targets: [levelUpText, levelText],
-      y: '-=40',
+      y: '-=50',
       alpha: { from: 1, to: 0 },
-      scale: { from: 1, to: 1.5 },
-      duration: 2000,
-      ease: 'Power2',
+      scale: { from: 0.8, to: 1.8 },
+      duration: 2500,
+      ease: 'Back.easeOut',
       onComplete: () => {
         levelUpText.destroy();
         levelText.destroy();
       },
     });
     
-    // 升级光效
+    // 升级光效 - 更多粒子
     const particles = this.scene.add.particles(this.x, this.y, 'coin', {
-      speed: { min: 50, max: 100 },
+      speed: { min: 80, max: 150 },
       angle: { min: 0, max: 360 },
-      scale: { start: 0.5, end: 0 },
-      lifespan: 800,
-      quantity: 20,
+      scale: { start: 0.8, end: 0 },
+      lifespan: 1200,
+      quantity: 30,
       blendMode: 'ADD',
+      frequency: 50,
     });
     
-    this.scene.time.delayedCall(800, () => {
+    // 角色闪光效果
+    this.setTint(0xFFD700);
+    this.scene.time.delayedCall(200, () => {
+      this.clearTint();
+    });
+    
+    // 相机震动
+    this.scene.cameras.main.shake(300, 0.003);
+    
+    this.scene.time.delayedCall(1200, () => {
       particles.destroy();
     });
     

@@ -1,0 +1,108 @@
+# 代码风格指南
+
+## 目标
+确保所有代码看起来像是**一个人写的**，保持一致性和可维护性。
+
+## 格式化工具
+使用 **Prettier** 进行自动格式化，配置规则如下：
+
+### TypeScript/JavaScript
+```json
+{
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false
+}
+```
+
+## 命名规范
+
+### 文件命名
+- **React组件**：PascalCase - `PlayerStatus.tsx`
+- **工具函数**：camelCase - `gameUtils.ts`
+- **常量文件**：camelCase - `gameConstants.ts`
+- **类型定义**：camelCase - `types.ts` 或 `interfaces.ts`
+
+### 代码命名
+- **类名/接口/类型**：PascalCase - `Player`, `GameState`, `IEnemy`
+- **变量/函数**：camelCase - `playerHealth`, `updatePosition()`
+- **常量**：UPPER_SNAKE_CASE - `MAX_HEALTH`, `SPRITE_SIZE`
+- **私有属性**：前缀下划线 - `_internalState`
+
+## 缩进与格式
+- **缩进**：2个空格（不使用Tab）
+- **行宽**：最大100字符
+- **分号**：必须使用
+- **引号**：单引号优先
+- **尾逗号**：ES5标准（对象、数组最后一项加逗号）
+
+## 模块化规则
+
+### 目录结构
+```
+src/
+├── game/          # 游戏核心逻辑
+│   ├── entities/  # 实体类（Player, Enemy等）
+│   ├── systems/   # 游戏系统（Combat, Level等）
+│   └── scenes/    # 场景管理
+├── ui/            # UI组件
+│   ├── components/# React组件
+│   └── styles/    # 样式文件
+├── utils/         # 工具函数
+├── types/         # 类型定义
+└── constants/     # 常量配置
+```
+
+### 单一职责
+- 每个文件只负责一个主要功能
+- 类的方法不超过50行
+- 函数参数不超过5个
+
+### 依赖管理
+- 按字母顺序组织导入
+- 分组：第三方库 → 本地模块 → 类型定义
+- 避免循环依赖
+
+### 导出规则
+- 优先使用命名导出
+- 每个文件最多一个默认导出
+- 统一从index.ts导出公共API
+
+## TypeScript规范
+- **严格模式**：启用所有strict选项
+- **类型优先**：优先使用interface，特殊情况用type
+- **避免any**：必要时使用unknown
+- **明确类型**：函数返回值必须显式声明类型
+
+## 注释规范
+- **JSDoc**：公共API必须有完整文档
+- **行内注释**：解释"为什么"，不解释"是什么"
+- **TODO注释**：格式 `// TODO(username): description`
+- 避免注释掉的代码，使用版本控制
+
+## React规范
+- **函数组件**：优先使用函数组件和Hooks
+- **Props类型**：必须定义接口
+- **组件大小**：单个组件不超过200行
+- **状态管理**：本地状态用useState，全局状态用Context/Zustand
+
+## 重构原则
+- **小步迭代**：每次重构改动不超过5个文件
+- **测试覆盖**：重构前确保有基本的功能测试
+- **向后兼容**：避免破坏性更改
+- **代码审查**：重大重构需要review
+
+## 性能优化
+- 避免在循环中创建函数
+- React组件使用memo优化渲染
+- 大型数据结构使用不可变更新
+- 及时清理事件监听器和定时器
+
+## 错误处理
+- 所有异步操作必须有错误处理
+- 用户操作失败要有友好提示
+- 关键错误记录到控制台
+- 避免空catch块

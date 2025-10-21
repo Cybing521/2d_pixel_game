@@ -8,14 +8,19 @@ export type ElementType = 'fire' | 'water' | 'wind' | 'earth';
 
 // 技能效果类型
 export type SkillEffectType = 
-  | 'burn'      // 燃烧
-  | 'freeze'    // 冰冻
-  | 'slow'      // 减速
-  | 'stun'      // 晕眩
-  | 'heal'      // 治疗
-  | 'shield'    // 护盾
-  | 'buff'      // 增益
-  | 'debuff';   // 减益
+  | 'burn'          // 燃烧
+  | 'freeze'        // 冰冻
+  | 'slow'          // 减速
+  | 'stun'          // 晕眩
+  | 'heal'          // 治疗
+  | 'shield'        // 护盾
+  | 'buff'          // 增益
+  | 'debuff'        // 减益
+  | 'knockback'     // 击退
+  | 'pull'          // 拉取
+  | 'dodge_buff'    // 闪避增益
+  | 'defense_buff'  // 防御增益
+  | 'terrain_block';// 地形阻挡
 
 // 技能层级
 export type SkillTier = 1 | 2 | 3 | 4;
@@ -36,8 +41,8 @@ export interface Skill {
   icon: string;
   
   // 分类
-  classType: ClassType;     // 所属职业
-  elementType?: ElementType; // 元素类型（职业技能可能没有）
+  classType: ClassType | null;     // 所属职业
+  elementType?: ElementType | null; // 元素类型（职业技能可能没有）
   tier: SkillTier;          // 技能层级
   
   // 消耗
