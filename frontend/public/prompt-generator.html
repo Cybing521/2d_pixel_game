@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎨 AI精灵图生成器 - 提示词浏览工具</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+    
+    .header p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+    
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      padding: 20px;
+      background: #f8f9fa;
+      border-bottom: 2px solid #e9ecef;
+    }
+    
+    .stat {
+      text-align: center;
+    }
+    
+    .stat-number {
+      font-size: 2em;
+      font-weight: bold;
+      color: #667eea;
+    }
+    
+    .stat-label {
+      color: #6c757d;
+      font-size: 0.9em;
+      margin-top: 5px;
+    }
+    
+    .controls {
+      padding: 20px;
+      background: #f8f9fa;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .filter-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .filter-group label {
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    select, input {
+      padding: 10px 15px;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      font-size: 1em;
+      outline: none;
+      transition: all 0.3s;
+    }
+    
+    select:focus, input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .search-box {
+      flex: 1;
+      min-width: 250px;
+    }
+    
+    .content {
+      padding: 30px;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+    
+    .card {
+      background: white;
+      border: 2px solid #e9ecef;
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s;
+      position: relative;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      border-color: #667eea;
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #f8f9fa;
+    }
+    
+    .card-title {
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #212529;
+    }
+    
+    .card-category {
+      display: inline-block;
+      padding: 5px 12px;
+      background: #667eea;
+      color: white;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    
+    .card-info {
+      margin-bottom: 15px;
+    }
+    
+    .info-item {
+      margin: 8px 0;
+      font-size: 0.95em;
+      color: #6c757d;
+    }
+    
+    .info-label {
+      font-weight: 600;
+      color: #495057;
+      margin-right: 5px;
+    }
+    
+    .prompt-text {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 0.9em;
+      line-height: 1.6;
+      color: #495057;
+      margin-bottom: 15px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .tag {
+      padding: 4px 10px;
+      background: #e9ecef;
+      color: #495057;
+      border-radius: 12px;
+      font-size: 0.8em;
+    }
+    
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-copy {
+      background: #667eea;
+      color: white;
+    }
+    
+    .btn-copy:hover {
+      background: #5568d3;
+      transform: scale(1.05);
+    }
+    
+    .btn-copy:active {
+      transform: scale(0.95);
+    }
+    
+    .btn-download {
+      background: #28a745;
+      color: white;
+    }
+    
+    .btn-download:hover {
+      background: #218838;
+    }
+    
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #28a745;
+      color: white;
+      padding: 15px 25px;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      display: none;
+      animation: slideIn 0.3s ease-out;
+      z-index: 1000;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .toast.show {
+      display: block;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6c757d;
+    }
+    
+    .empty-state h3 {
+      font-size: 1.5em;
+      margin-bottom: 10px;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 60px;
+    }
+    
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎨 AI精灵图生成器</h1>
+      <p>为《遗忘的像素魔法大陆》生成游戏资源</p>
+    </div>
+    
+    <div class="stats" id="stats">
+      <div class="stat">
+        <div class="stat-number" id="totalCount">0</div>
+        <div class="stat-label">总提示词</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number" id="categoryCount">0</div>
+        <div class="stat-label">分类</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number" id="filteredCount">0</div>
+        <div class="stat-label">当前显示</div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <div class="filter-group">
+        <label>类别:</label>
+        <select id="categoryFilter">
+          <option value="all">全部</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>标签:</label>
+        <select id="tagFilter">
+          <option value="all">全部标签</option>
+        </select>
+      </div>
+      
+      <input 
+        type="text" 
+        id="searchBox" 
+        class="search-box" 
+        placeholder="🔍 搜索提示词..."
+      >
+      
+      <button class="btn-download" onclick="downloadAllPrompts()">
+        📥 导出全部
+      </button>
+    </div>
+    
+    <div class="content">
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>加载提示词库...</p>
+      </div>
+      <div class="grid" id="grid" style="display: none;"></div>
+      <div class="empty-state" id="emptyState" style="display: none;">
+        <h3>😔 没有找到匹配的提示词</h3>
+        <p>尝试调整筛选条件或搜索关键词</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="toast" id="toast"></div>
+  
+  <script>
+    let allPrompts = [];
+    let allTags = new Set();
+    
+    // 加载数据
+    async function loadData() {
+      try {
+        const response = await fetch('/data/ai-prompts.json');
+        const data = await response.json();
+        processData(data);
+        renderAll();
+      } catch (error) {
+        document.getElementById('loading').innerHTML = `
+          <h3>❌ 加载失败</h3>
+          <p>请确保 ai-prompts.json 文件存在</p>
+        `;
+      }
+    }
+    
+    // 处理数据
+    function processData(data) {
+      const categories = ['players', 'enemies', 'environment', 'items', 'effects', 'tilesets', 'ui'];
+      
+      categories.forEach(category => {
+        if (data[category]) {
+          extractPrompts(data[category], category);
+        }
+      });
+      
+      // 统计
+      document.getElementById('totalCount').textContent = allPrompts.length;
+      document.getElementById('categoryCount').textContent = categories.length;
+      document.getElementById('filteredCount').textContent = allPrompts.length;
+      
+      // 填充筛选器
+      populateFilters();
+    }
+    
+    // 提取提示词
+    function extractPrompts(obj, category, parentName = '') {
+      for (const [key, value] of Object.entries(obj)) {
+        if (value && typeof value === 'object') {
+          if (value.prompt) {
+            // 这是一个提示词对象
+            allPrompts.push({
+              category,
+              name: parentName ? `${parentName} - ${key}` : key,
+              ...value
+            });
+            
+            // 收集标签
+            if (value.tags) {
+              value.tags.forEach(tag => allTags.add(tag));
+            }
+          } else if (!Array.isArray(value)) {
+            // 递归处理嵌套对象
+            const newParent = parentName ? `${parentName} - ${value.name || key}` : (value.name || key);
+            extractPrompts(value, category, newParent);
+          }
+        }
+      }
+    }
+    
+    // 填充筛选器
+    function populateFilters() {
+      const categoryFilter = document.getElementById('categoryFilter');
+      const categories = [...new Set(allPrompts.map(p => p.category))];
+      
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = getCategoryName(cat);
+        categoryFilter.appendChild(option);
+      });
+      
+      const tagFilter = document.getElementById('tagFilter');
+      [...allTags].sort().forEach(tag => {
+        const option = document.createElement('option');
+        option.value = tag;
+        option.textContent = tag;
+        tagFilter.appendChild(option);
+      });
+    }
+    
+    // 获取分类中文名
+    function getCategoryName(category) {
+      const names = {
+        'players': '玩家角色',
+        'enemies': '敌人',
+        'environment': '环境',
+        'items': '物品道具',
+        'effects': '特效',
+        'tilesets': '地形贴图',
+        'ui': 'UI元素'
+      };
+      return names[category] || category;
+    }
+    
+    // 渲染所有卡片
+    function renderAll() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('grid').style.display = 'grid';
+      renderPrompts(allPrompts);
+    }
+    
+    // 渲染提示词卡片
+    function renderPrompts(prompts) {
+      const grid = document.getElementById('grid');
+      const emptyState = document.getElementById('emptyState');
+      
+      if (prompts.length === 0) {
+        grid.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+      }
+      
+      grid.style.display = 'grid';
+      emptyState.style.display = 'none';
+      grid.innerHTML = '';
+      
+      prompts.forEach((item, index) => {
+        const card = createCard(item, index);
+        grid.appendChild(card);
+      });
+      
+      document.getElementById('filteredCount').textContent = prompts.length;
+    }
+    
+    // 创建卡片
+    function createCard(item, index) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      
+      const tags = item.tags ? item.tags.map(tag => 
+        `<span class="tag">${tag}</span>`
+      ).join('') : '';
+      
+      const size = item.size || '32x32';
+      const frames = item.frames ? ` (${item.frames}帧)` : '';
+      
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="card-title">${item.name}</div>
+          <div class="card-category">${getCategoryName(item.category)}</div>
+        </div>
+        
+        <div class="card-info">
+          <div class="info-item">
+            <span class="info-label">📁 文件名:</span>
+            ${item.filename}
+          </div>
+          <div class="info-item">
+            <span class="info-label">📐 尺寸:</span>
+            ${size}${frames}
+          </div>
+        </div>
+        
+        <div class="prompt-text">${item.prompt}</div>
+        
+        ${tags ? `<div class="tags">${tags}</div>` : ''}
+        
+        <div class="actions">
+          <button class="btn-copy" onclick="copyPrompt(${index})">
+            📋 复制提示词
+          </button>
+        </div>
+      `;
+      
+      return card;
+    }
+    
+    // 复制提示词
+    function copyPrompt(index) {
+      const prompts = getCurrentPrompts();
+      const item = prompts[index];
+      
+      navigator.clipboard.writeText(item.prompt).then(() => {
+        showToast(`✅ 已复制: ${item.name}`);
+      });
+    }
+    
+    // 获取当前显示的提示词
+    function getCurrentPrompts() {
+      const category = document.getElementById('categoryFilter').value;
+      const tag = document.getElementById('tagFilter').value;
+      const search = document.getElementById('searchBox').value.toLowerCase();
+      
+      return allPrompts.filter(item => {
+        const matchCategory = category === 'all' || item.category === category;
+        const matchTag = tag === 'all' || (item.tags && item.tags.includes(tag));
+        const matchSearch = search === '' || 
+          item.name.toLowerCase().includes(search) ||
+          item.prompt.toLowerCase().includes(search) ||
+          item.filename.toLowerCase().includes(search);
+        
+        return matchCategory && matchTag && matchSearch;
+      });
+    }
+    
+    // 筛选
+    function filterPrompts() {
+      const filtered = getCurrentPrompts();
+      renderPrompts(filtered);
+    }
+    
+    // 显示提示
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+    
+    // 导出所有提示词
+    function downloadAllPrompts() {
+      const prompts = getCurrentPrompts();
+      const text = prompts.map(item => 
+        `=== ${item.name} ===\n` +
+        `文件名: ${item.filename}\n` +
+        `分类: ${getCategoryName(item.category)}\n` +
+        `提示词: ${item.prompt}\n\n`
+      ).join('\n');
+      
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ai-prompts-export.txt';
+      a.click();
+      
+      showToast('✅ 导出成功！');
+    }
+    
+    // 事件监听
+    document.getElementById('categoryFilter').addEventListener('change', filterPrompts);
+    document.getElementById('tagFilter').addEventListener('change', filterPrompts);
+    document.getElementById('searchBox').addEventListener('input', filterPrompts);
+    
+    // 初始化
+    loadData();
+  </script>
+</body>
+</html>

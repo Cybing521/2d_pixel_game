@@ -1,0 +1,501 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "AI图像生成提示词库 - 用于生成游戏精灵图",
+    "style": "pixel art, 16-bit, retro game style",
+    "baseResolution": "32x32 pixels",
+    "colorPalette": "vibrant but not oversaturated",
+    "usage": "适用于 Midjourney, DALL-E, Stable Diffusion 等AI图像生成工具"
+  },
+  
+  "commonSuffix": {
+    "pixelArt": "pixel art style, 32x32 pixels, transparent background, PNG format, clean edges, retro game sprite",
+    "topDown": "top-down view, game sprite",
+    "sideView": "side view platformer sprite",
+    "animation": "sprite sheet, 4 frames animation",
+    "quality": "high quality pixel art, sharp pixels, no blur, detailed but simple"
+  },
+
+  "players": {
+    "warrior": {
+      "name": "战士",
+      "category": "player",
+      "idle": {
+        "prompt": "A brave warrior character in pixel art style, wearing blue armor and helmet, holding a sword, standing idle pose, 32x32 pixels, top-down view, transparent background, clean pixel art, retro RPG game sprite",
+        "tags": ["warrior", "knight", "melee", "heavy-armor"],
+        "filename": "player_warrior_idle.png"
+      },
+      "walk": {
+        "prompt": "Warrior character walk cycle animation, 4 frames sprite sheet, blue armor, walking animation, pixel art 32x32 each frame, side view, transparent background, smooth movement",
+        "tags": ["animation", "walk-cycle"],
+        "filename": "player_warrior_walk.png",
+        "frames": 4
+      },
+      "attack": {
+        "prompt": "Warrior attacking with sword, pixel art sprite, blue armor, sword swing animation, 32x32 pixels, action pose, transparent background, dynamic movement",
+        "tags": ["attack", "action"],
+        "filename": "player_warrior_attack.png"
+      }
+    },
+    
+    "mage": {
+      "name": "法师",
+      "category": "player",
+      "idle": {
+        "prompt": "Wizard mage character pixel art, wearing purple robe and pointed hat, holding magical staff with glowing orb, standing pose, 32x32 pixels, top-down view, transparent background, mystical appearance",
+        "tags": ["mage", "wizard", "magic", "ranged"],
+        "filename": "player_mage_idle.png"
+      },
+      "walk": {
+        "prompt": "Mage character walking animation sprite sheet, 4 frames, purple robes flowing, staff in hand, pixel art 32x32 per frame, side view, transparent background",
+        "tags": ["animation", "walk-cycle"],
+        "filename": "player_mage_walk.png",
+        "frames": 4
+      },
+      "cast": {
+        "prompt": "Mage casting spell, magical energy effects, purple and blue magic aura, pixel art 32x32, dynamic pose with staff raised, transparent background, glowing effects",
+        "tags": ["magic", "cast", "spell"],
+        "filename": "player_mage_cast.png"
+      }
+    },
+    
+    "rogue": {
+      "name": "盗贼",
+      "category": "player",
+      "idle": {
+        "prompt": "Rogue assassin character pixel art, wearing dark green hood and cloak, holding dual daggers, sneaky pose, 32x32 pixels, top-down view, transparent background, agile appearance",
+        "tags": ["rogue", "assassin", "stealth", "agile"],
+        "filename": "player_rogue_idle.png"
+      },
+      "walk": {
+        "prompt": "Rogue character sneaking animation, 4 frames sprite sheet, dark cloak, crouched walking, pixel art 32x32 each frame, side view, transparent background, stealthy movement",
+        "tags": ["animation", "stealth", "sneak"],
+        "filename": "player_rogue_walk.png",
+        "frames": 4
+      },
+      "attack": {
+        "prompt": "Rogue quick strike with daggers, pixel art sprite, fast attack motion blur effect, 32x32 pixels, dynamic action pose, transparent background",
+        "tags": ["attack", "quick", "dual-wield"],
+        "filename": "player_rogue_attack.png"
+      }
+    },
+    
+    "priest": {
+      "name": "牧师",
+      "category": "player",
+      "idle": {
+        "prompt": "Holy priest character pixel art, wearing white and gold robes, holding holy book and scepter, peaceful pose, 32x32 pixels, top-down view, transparent background, divine appearance with soft glow",
+        "tags": ["priest", "healer", "support", "holy"],
+        "filename": "player_priest_idle.png"
+      },
+      "heal": {
+        "prompt": "Priest healing spell animation, golden light effects, holy aura, pixel art 32x32, hands raised in prayer pose, transparent background, warm glowing particles",
+        "tags": ["heal", "holy-magic", "support"],
+        "filename": "player_priest_heal.png"
+      }
+    }
+  },
+
+  "enemies": {
+    "slime": {
+      "name": "史莱姆",
+      "category": "enemy",
+      "variants": {
+        "green": {
+          "prompt": "Cute green slime monster pixel art, blob shape with big eyes, slightly transparent gelatinous body, 32x32 pixels, top-down view, transparent background, friendly but dangerous look, small bouncing creature",
+          "tags": ["slime", "basic-enemy", "cute", "weak"],
+          "filename": "enemy_slime_green.png"
+        },
+        "blue": {
+          "prompt": "Blue ice slime pixel art, frozen appearance with icy crystals, 32x32 pixels, transparent background, cold blue colors, frost effects",
+          "tags": ["slime", "ice", "elemental"],
+          "filename": "enemy_slime_blue.png"
+        },
+        "red": {
+          "prompt": "Red fire slime pixel art, flame-like body with fire effects, 32x32 pixels, transparent background, hot red and orange colors, burning appearance",
+          "tags": ["slime", "fire", "elemental"],
+          "filename": "enemy_slime_red.png"
+        }
+      }
+    },
+    
+    "goblin": {
+      "name": "哥布林",
+      "category": "enemy",
+      "idle": {
+        "prompt": "Goblin warrior pixel art, small green creature with pointed ears, wearing crude armor, holding rusty sword and shield, mean expression, 32x32 pixels, top-down view, transparent background, ugly but not too scary",
+        "tags": ["goblin", "warrior", "melee", "common-enemy"],
+        "filename": "enemy_goblin_idle.png"
+      },
+      "variants": {
+        "archer": {
+          "prompt": "Goblin archer pixel art, green skin, holding bow and arrow, leather armor, 32x32 pixels, transparent background, ranged enemy sprite",
+          "tags": ["goblin", "archer", "ranged"],
+          "filename": "enemy_goblin_archer.png"
+        },
+        "shaman": {
+          "prompt": "Goblin shaman pixel art, wearing tribal robes and bone necklace, holding magic staff with skull, 32x32 pixels, transparent background, mystical goblin caster",
+          "tags": ["goblin", "magic", "shaman"],
+          "filename": "enemy_goblin_shaman.png"
+        }
+      }
+    },
+    
+    "skeleton": {
+      "name": "骷髅",
+      "category": "enemy",
+      "idle": {
+        "prompt": "Skeleton warrior pixel art, animated bones, wearing tattered armor, holding sword, glowing red eyes, 32x32 pixels, top-down view, transparent background, undead creature sprite",
+        "tags": ["skeleton", "undead", "warrior"],
+        "filename": "enemy_skeleton_idle.png"
+      },
+      "mage": {
+        "prompt": "Skeleton mage pixel art, bones with tattered purple robes, holding staff with magical orb, glowing eye sockets, 32x32 pixels, transparent background, undead spellcaster",
+        "tags": ["skeleton", "undead", "magic"],
+        "filename": "enemy_skeleton_mage.png"
+      }
+    },
+    
+    "ghost": {
+      "name": "幽灵",
+      "category": "enemy",
+      "idle": {
+        "prompt": "Cute ghost pixel art, white translucent sheet-like body, simple face with two dots for eyes, floating slightly, 32x32 pixels, transparent background, semi-transparent sprite, not too scary",
+        "tags": ["ghost", "flying", "ethereal"],
+        "filename": "enemy_ghost_idle.png"
+      }
+    },
+    
+    "dragon": {
+      "name": "龙（Boss）",
+      "category": "boss",
+      "idle": {
+        "prompt": "Epic dragon boss pixel art, large red dragon with wings spread, fierce expression, breathing fire, 128x128 pixels, transparent background, detailed scales and horns, imposing boss creature",
+        "tags": ["dragon", "boss", "fire", "flying"],
+        "filename": "boss_dragon_idle.png",
+        "size": "128x128"
+      },
+      "attack": {
+        "prompt": "Dragon breathing fire attack animation, massive flame breath, pixel art 128x128, wings spread, transparent background, powerful attack pose",
+        "tags": ["boss", "attack", "fire-breath"],
+        "filename": "boss_dragon_attack.png",
+        "size": "128x128"
+      }
+    },
+    
+    "demon": {
+      "name": "恶魔（Boss）",
+      "category": "boss",
+      "idle": {
+        "prompt": "Dark demon boss pixel art, horned creature with large wings, glowing red eyes, muscular build, holding dark magic orb, 128x128 pixels, transparent background, menacing appearance",
+        "tags": ["demon", "boss", "dark-magic"],
+        "filename": "boss_demon_idle.png",
+        "size": "128x128"
+      }
+    }
+  },
+
+  "environment": {
+    "trees": {
+      "oak": {
+        "prompt": "Oak tree pixel art, green leafy top, brown trunk, suitable for fantasy game, 32x48 pixels, transparent background, simple but detailed, top-down view",
+        "tags": ["tree", "nature", "obstacle"],
+        "filename": "env_tree_oak.png",
+        "size": "32x48"
+      },
+      "pine": {
+        "prompt": "Pine tree pixel art, triangular evergreen shape, dark green needles, 32x48 pixels, transparent background, winter forest tree sprite",
+        "tags": ["tree", "pine", "forest"],
+        "filename": "env_tree_pine.png",
+        "size": "32x48"
+      },
+      "dead": {
+        "prompt": "Dead withered tree pixel art, bare branches, dark brown bark, creepy atmosphere, 32x48 pixels, transparent background, haunted forest sprite",
+        "tags": ["tree", "dead", "dark"],
+        "filename": "env_tree_dead.png",
+        "size": "32x48"
+      }
+    },
+    
+    "rocks": {
+      "small": {
+        "prompt": "Small gray rock pixel art, simple stone obstacle, weathered appearance, 32x32 pixels, transparent background, game environment sprite",
+        "tags": ["rock", "obstacle", "stone"],
+        "filename": "env_rock_small.png"
+      },
+      "large": {
+        "prompt": "Large boulder pixel art, big gray stone with cracks and moss, 64x64 pixels, transparent background, detailed rock formation",
+        "tags": ["rock", "boulder", "large"],
+        "filename": "env_rock_large.png",
+        "size": "64x64"
+      },
+      "crystal": {
+        "prompt": "Magic crystal formation pixel art, glowing blue crystals growing from rock, 32x32 pixels, transparent background, mystical mineral sprite",
+        "tags": ["crystal", "magic", "resource"],
+        "filename": "env_crystal.png"
+      }
+    },
+    
+    "plants": {
+      "grass": {
+        "prompt": "Grass tuft pixel art, small green grass blades, decorative plant, 16x16 pixels, transparent background, simple vegetation sprite",
+        "tags": ["grass", "decoration", "plant"],
+        "filename": "env_grass.png",
+        "size": "16x16"
+      },
+      "flower": {
+        "prompt": "Colorful flower pixel art, red petals with green stem, small decorative plant, 16x16 pixels, transparent background, garden sprite",
+        "tags": ["flower", "decoration", "colorful"],
+        "filename": "env_flower.png",
+        "size": "16x16"
+      },
+      "mushroom": {
+        "prompt": "Fantasy mushroom pixel art, red cap with white dots, magical appearance, 24x24 pixels, transparent background, forest sprite",
+        "tags": ["mushroom", "magic", "forest"],
+        "filename": "env_mushroom.png",
+        "size": "24x24"
+      }
+    },
+    
+    "structures": {
+      "chest": {
+        "prompt": "Treasure chest pixel art, wooden chest with metal bands and lock, closed state, 32x32 pixels, transparent background, classic RPG treasure box",
+        "tags": ["chest", "treasure", "loot"],
+        "filename": "env_chest_closed.png"
+      },
+      "chest_open": {
+        "prompt": "Open treasure chest pixel art, lid opened revealing golden glow inside, 32x32 pixels, transparent background, treasure sprite",
+        "tags": ["chest", "treasure", "open"],
+        "filename": "env_chest_open.png"
+      },
+      "sign": {
+        "prompt": "Wooden sign post pixel art, weathered wood board on stake, 32x32 pixels, transparent background, game UI directional sign",
+        "tags": ["sign", "UI", "direction"],
+        "filename": "env_sign.png"
+      },
+      "torch": {
+        "prompt": "Wall torch pixel art, burning flame on wooden stick, glowing orange fire, 16x32 pixels, transparent background, light source sprite",
+        "tags": ["torch", "light", "fire"],
+        "filename": "env_torch.png",
+        "size": "16x32"
+      }
+    }
+  },
+
+  "items": {
+    "consumables": {
+      "health_potion": {
+        "prompt": "Red health potion pixel art, glass bottle with red liquid, cork stopper, glowing effect, 16x16 pixels, transparent background, RPG item sprite",
+        "tags": ["potion", "health", "consumable"],
+        "filename": "item_potion_health.png",
+        "size": "16x16"
+      },
+      "mana_potion": {
+        "prompt": "Blue mana potion pixel art, glass bottle with blue magical liquid, sparkle effects, 16x16 pixels, transparent background, magic potion sprite",
+        "tags": ["potion", "mana", "magic"],
+        "filename": "item_potion_mana.png",
+        "size": "16x16"
+      },
+      "food": {
+        "prompt": "Cooked meat pixel art, roasted chicken leg, appetizing appearance, 16x16 pixels, transparent background, food item sprite",
+        "tags": ["food", "consumable", "heal"],
+        "filename": "item_food_meat.png",
+        "size": "16x16"
+      }
+    },
+    
+    "currency": {
+      "gold_coin": {
+        "prompt": "Gold coin pixel art, shiny golden coin with shine effect, 16x16 pixels, transparent background, currency sprite, sparkle",
+        "tags": ["coin", "gold", "currency"],
+        "filename": "item_coin_gold.png",
+        "size": "16x16"
+      },
+      "gem": {
+        "prompt": "Magic gem pixel art, brilliant blue diamond gem, glowing with magical energy, 16x16 pixels, transparent background, premium currency sprite",
+        "tags": ["gem", "premium", "magic"],
+        "filename": "item_gem.png",
+        "size": "16x16"
+      }
+    },
+    
+    "weapons": {
+      "sword": {
+        "prompt": "Iron sword pixel art, medieval longsword with silver blade and brown handle, 16x16 pixels, transparent background, weapon icon sprite",
+        "tags": ["sword", "weapon", "melee"],
+        "filename": "item_weapon_sword.png",
+        "size": "16x16"
+      },
+      "staff": {
+        "prompt": "Magic staff pixel art, wooden staff with glowing blue orb on top, mystical appearance, 16x16 pixels, transparent background, mage weapon sprite",
+        "tags": ["staff", "weapon", "magic"],
+        "filename": "item_weapon_staff.png",
+        "size": "16x16"
+      },
+      "bow": {
+        "prompt": "Wooden bow pixel art, curved bow with string, 16x16 pixels, transparent background, ranged weapon sprite",
+        "tags": ["bow", "weapon", "ranged"],
+        "filename": "item_weapon_bow.png",
+        "size": "16x16"
+      },
+      "dagger": {
+        "prompt": "Steel dagger pixel art, small blade weapon with leather grip, 16x16 pixels, transparent background, rogue weapon sprite",
+        "tags": ["dagger", "weapon", "stealth"],
+        "filename": "item_weapon_dagger.png",
+        "size": "16x16"
+      }
+    },
+    
+    "armor": {
+      "helmet": {
+        "prompt": "Iron helmet pixel art, medieval knight helmet with visor, silver metal, 16x16 pixels, transparent background, armor piece sprite",
+        "tags": ["helmet", "armor", "defense"],
+        "filename": "item_armor_helmet.png",
+        "size": "16x16"
+      },
+      "chestplate": {
+        "prompt": "Iron chestplate pixel art, medieval armor breastplate, metallic shine, 16x16 pixels, transparent background, body armor sprite",
+        "tags": ["armor", "chest", "defense"],
+        "filename": "item_armor_chest.png",
+        "size": "16x16"
+      },
+      "shield": {
+        "prompt": "Wooden shield pixel art, round shield with metal boss, 16x16 pixels, transparent background, defense equipment sprite",
+        "tags": ["shield", "defense", "block"],
+        "filename": "item_armor_shield.png",
+        "size": "16x16"
+      }
+    }
+  },
+
+  "effects": {
+    "combat": {
+      "slash": {
+        "prompt": "Sword slash effect pixel art, white curved motion blur line, 32x32 pixels, transparent background, attack effect sprite",
+        "tags": ["effect", "slash", "melee"],
+        "filename": "fx_slash.png"
+      },
+      "explosion": {
+        "prompt": "Small explosion effect pixel art, orange and red burst, 4-frame animation sprite sheet, 32x32 per frame, transparent background, impact effect",
+        "tags": ["effect", "explosion", "impact"],
+        "filename": "fx_explosion.png",
+        "frames": 4
+      },
+      "fireball": {
+        "prompt": "Fireball projectile pixel art, blazing orange sphere with flame trail, 16x16 pixels, transparent background, magic projectile sprite",
+        "tags": ["effect", "fireball", "projectile"],
+        "filename": "fx_fireball.png",
+        "size": "16x16"
+      },
+      "ice_shard": {
+        "prompt": "Ice shard projectile pixel art, sharp blue crystal with frost trail, 16x16 pixels, transparent background, ice magic sprite",
+        "tags": ["effect", "ice", "projectile"],
+        "filename": "fx_ice_shard.png",
+        "size": "16x16"
+      }
+    },
+    
+    "magic": {
+      "heal": {
+        "prompt": "Healing sparkles effect pixel art, golden sparkle particles, 4-frame animation, 32x32 per frame, transparent background, holy magic effect",
+        "tags": ["effect", "heal", "holy"],
+        "filename": "fx_heal.png",
+        "frames": 4
+      },
+      "buff": {
+        "prompt": "Buff aura effect pixel art, glowing golden ring around character, pulsing animation, 32x32 pixels, transparent background, enhancement effect",
+        "tags": ["effect", "buff", "aura"],
+        "filename": "fx_buff.png"
+      },
+      "teleport": {
+        "prompt": "Teleport effect pixel art, purple magic circle with particles, 4-frame animation, 32x32 per frame, transparent background, magic portal effect",
+        "tags": ["effect", "teleport", "magic"],
+        "filename": "fx_teleport.png",
+        "frames": 4
+      }
+    }
+  },
+
+  "tilesets": {
+    "terrain": {
+      "grass": {
+        "prompt": "Grass terrain tileset pixel art, seamless green grass texture, suitable for top-down RPG, 16x16 tile size, can be tiled horizontally and vertically, vibrant green color",
+        "tags": ["tileset", "grass", "terrain"],
+        "filename": "tileset_grass.png",
+        "size": "16x16",
+        "seamless": true
+      },
+      "stone": {
+        "prompt": "Stone floor tileset pixel art, seamless gray cobblestone texture, suitable for dungeons, 16x16 tile size, tileable pattern, weathered appearance",
+        "tags": ["tileset", "stone", "dungeon"],
+        "filename": "tileset_stone.png",
+        "size": "16x16",
+        "seamless": true
+      },
+      "water": {
+        "prompt": "Water tileset pixel art, seamless blue water surface with subtle waves, animated if possible, 16x16 tile size, tileable, translucent appearance",
+        "tags": ["tileset", "water", "animated"],
+        "filename": "tileset_water.png",
+        "size": "16x16",
+        "seamless": true
+      },
+      "dirt": {
+        "prompt": "Dirt path tileset pixel art, seamless brown earth texture, 16x16 tile size, tileable, natural ground appearance with small rocks",
+        "tags": ["tileset", "dirt", "path"],
+        "filename": "tileset_dirt.png",
+        "size": "16x16",
+        "seamless": true
+      }
+    }
+  },
+
+  "ui": {
+    "icons": {
+      "heart": {
+        "prompt": "Heart icon pixel art, red heart shape for health display, 16x16 pixels, transparent background, simple and clear UI sprite",
+        "tags": ["ui", "health", "heart"],
+        "filename": "ui_icon_heart.png",
+        "size": "16x16"
+      },
+      "mana": {
+        "prompt": "Mana icon pixel art, blue water drop or magic symbol, 16x16 pixels, transparent background, UI resource indicator",
+        "tags": ["ui", "mana", "magic"],
+        "filename": "ui_icon_mana.png",
+        "size": "16x16"
+      },
+      "stamina": {
+        "prompt": "Stamina icon pixel art, yellow lightning bolt symbol, 16x16 pixels, transparent background, energy UI indicator",
+        "tags": ["ui", "stamina", "energy"],
+        "filename": "ui_icon_stamina.png",
+        "size": "16x16"
+      },
+      "coin": {
+        "prompt": "Gold coin UI icon pixel art, shiny gold coin for currency display, 16x16 pixels, transparent background, clear and recognizable",
+        "tags": ["ui", "currency", "coin"],
+        "filename": "ui_icon_coin.png",
+        "size": "16x16"
+      }
+    },
+    
+    "buttons": {
+      "normal": {
+        "prompt": "UI button pixel art, stone or wood rectangular button, normal state, 64x24 pixels, 3D appearance with slight shadow, game UI element",
+        "tags": ["ui", "button", "normal"],
+        "filename": "ui_button_normal.png",
+        "size": "64x24"
+      },
+      "hover": {
+        "prompt": "UI button pixel art, highlighted button state, glowing or brightened, 64x24 pixels, hover effect, game UI element",
+        "tags": ["ui", "button", "hover"],
+        "filename": "ui_button_hover.png",
+        "size": "64x24"
+      },
+      "pressed": {
+        "prompt": "UI button pixel art, pressed button state, darker or pushed down appearance, 64x24 pixels, click effect, game UI element",
+        "tags": ["ui", "button", "pressed"],
+        "filename": "ui_button_pressed.png",
+        "size": "64x24"
+      }
+    }
+  }
+}
