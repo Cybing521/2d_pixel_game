@@ -1,0 +1,43 @@
+{
+  "description": "技能图标配置 - 当前使用emoji占位符",
+  "note": "可以在未来替换为32x32像素精灵图",
+  "icons": {
+    "fire": {
+      "fireball": "🔥",
+      "fire_wall": "🔥🔥",
+      "flame_storm": "🌋",
+      "explosion": "💥",
+      "hellfire": "👿",
+      "meteor": "☄️"
+    },
+    "water": {
+      "heal": "💚",
+      "water_shield": "🛡️",
+      "ice_arrow": "❄️",
+      "ice_storm": "🌨️",
+      "ice_prison": "🧊"
+    },
+    "wind": {
+      "wind_blade": "🌪️",
+      "tornado": "🌀",
+      "wind_blessing": "💨",
+      "storm": "⛈️",
+      "hurricane": "🌪️"
+    },
+    "earth": {
+      "rock_armor": "🪨",
+      "earth_spike": "⛰️",
+      "rock_wall": "🧱",
+      "earth_fury": "💢",
+      "earthquake": "🌍"
+    }
+  },
+  "spritesheet_placeholder": "当前使用emoji，可替换为skill-icons.png精灵图",
+  "recommended_size": "32x32 pixels per icon",
+  "recommended_tools": [
+    "Aseprite - 像素艺术编辑器",
+    "Piskel - 在线像素编辑器",
+    "GraphicsGale - 免费像素工具",
+    "AI工具 - Midjourney/DALL-E生成后手动像素化"
+  ]
+}

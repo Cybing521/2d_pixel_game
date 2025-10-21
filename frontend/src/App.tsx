@@ -78,9 +78,9 @@ function App() {
   };
 
   return (
-    <div className="w-full h-screen overflow-hidden bg-black">
+    <div className="w-full h-screen overflow-hidden" style={{ background: '#4a1a4a' }}>
       {/* Phaser游戏容器 */}
-      <div id="game-container" className="w-full h-full" />
+      <div id="game-container" className="w-full h-full" style={{ imageRendering: 'pixelated' }} />
 
       {/* React UI覆盖层 */}
       {gameStarted ? (

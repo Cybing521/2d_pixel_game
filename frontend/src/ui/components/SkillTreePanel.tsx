@@ -10,7 +10,6 @@ export const SkillTreePanel: React.FC = () => {
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   
   const skillTree = useGameStore(state => state.skillTree);
-  const player = useGameStore(state => state.player);
 
   if (!skillTree) {
     return (
@@ -31,7 +30,7 @@ export const SkillTreePanel: React.FC = () => {
     );
   }
 
-  const classSkills = SkillTreeSystem.getClassSkills(skillTree.selectedClass);
+  const classSkills = skillTree.selectedClass ? SkillTreeSystem.getClassSkills(skillTree.selectedClass) : [];
   const elements = getAllElements();
 
   // 按层级分组技能
@@ -64,18 +63,23 @@ export const SkillTreePanel: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg w-full max-w-7xl h-[90vh] flex flex-col border-4 border-yellow-600">
-        {/* 标题栏 */}
-        <div className="flex items-center justify-between p-6 border-b-2 border-gray-700">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" style={{ imageRendering: 'pixelated' }}>
+      <div className="bg-gradient-to-b from-gray-800 to-gray-900 w-full max-w-7xl h-[90vh] flex flex-col border-8 border-yellow-400" 
+           style={{ boxShadow: '8px 8px 0 #000, inset 0 0 0 4px #1f2937' }}>
+        {/* 标题栏 - 像素风格 */}
+        <div className="flex items-center justify-between p-6 border-b-4 border-yellow-400 bg-black/50">
           <div>
-            <h2 className="text-3xl font-bold text-yellow-400">技能树</h2>
-            <p className="text-gray-400">
-              可用技能点: <span className="text-yellow-400 font-bold">{skillTree.availablePoints}</span>
+            <h2 className="text-3xl font-black text-yellow-400" 
+                style={{ fontFamily: 'monospace', textShadow: '3px 3px 0 #000' }}>
+              ◆ SKILL TREE ◆
+            </h2>
+            <p className="text-gray-300" style={{ fontFamily: 'monospace' }}>
+              POINTS: <span className="text-yellow-400 font-bold">{skillTree.availablePoints}</span>
             </p>
           </div>
           <button
-            className="text-gray-400 hover:text-white text-3xl"
+            className="w-12 h-12 bg-red-600 border-4 border-white hover:bg-red-500 text-white font-black text-xl"
+            style={{ fontFamily: 'monospace', boxShadow: '4px 4px 0 #000' }}
             onClick={() => useGameStore.getState().toggleUI('showSkillTree')}
           >
             ✕
@@ -83,31 +87,33 @@ export const SkillTreePanel: React.FC = () => {
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          {/* 标签栏 */}
-          <div className="w-48 bg-gray-900/50 border-r-2 border-gray-700 p-4">
+          {/* 标签栏 - 像素风格 */}
+          <div className="w-48 bg-gray-900/80 border-r-4 border-yellow-400 p-4">
             <div className="space-y-2">
               <button
-                className={`w-full px-4 py-3 rounded-lg font-bold text-left transition-colors ${
+                className={`w-full px-4 py-3 border-4 font-black text-left transition-all ${
                   activeTab === 'class'
-                    ? 'bg-yellow-600 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    ? 'bg-yellow-600 border-yellow-300 text-white'
+                    : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
                 }`}
+                style={{ fontFamily: 'monospace', boxShadow: '3px 3px 0 #000' }}
                 onClick={() => setActiveTab('class')}
               >
-                💼 职业技能
+                💼 CLASS
               </button>
               
-              <div className="border-t-2 border-gray-700 my-4"></div>
+              <div className="border-t-4 border-yellow-400/30 my-4"></div>
               
-              <p className="text-gray-500 text-sm font-bold px-2 mb-2">元素精通</p>
+              <p className="text-yellow-400 text-xs font-black px-2 mb-2" style={{ fontFamily: 'monospace' }}>ELEMENTS</p>
               {elements.map(elem => (
                 <button
                   key={elem.id}
-                  className={`w-full px-4 py-3 rounded-lg font-bold text-left transition-colors ${
+                  className={`w-full px-4 py-3 border-4 font-black text-left transition-all ${
                     activeTab === elem.id
-                      ? 'bg-yellow-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      ? 'bg-yellow-600 border-yellow-300 text-white'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
                   }`}
+                  style={{ fontFamily: 'monospace', boxShadow: '3px 3px 0 #000' }}
                   onClick={() => setActiveTab(elem.id)}
                 >
                   {elem.icon} {elem.nameZh}
@@ -124,8 +130,9 @@ export const SkillTreePanel: React.FC = () => {
                 <div className="space-y-8">
                   {[1, 2, 3, 4].map(tier => (
                     <div key={tier}>
-                      <h3 className="text-xl font-bold text-yellow-400 mb-4">
-                        第{tier}层 - {tier === 1 ? '基础' : tier === 2 ? '进阶' : tier === 3 ? '高级' : '终极'}技能
+                      <h3 className="text-xl font-black text-yellow-400 mb-4 border-b-4 border-yellow-400/50 pb-2" 
+                          style={{ fontFamily: 'monospace', textShadow: '2px 2px 0 #000' }}>
+                        TIER {tier} - {tier === 1 ? 'BASIC' : tier === 2 ? 'ADVANCED' : tier === 3 ? 'ELITE' : 'ULTIMATE'}
                       </h3>
                       <div className="grid grid-cols-4 gap-4">
                         {groupedSkills[tier]?.map(skill => {
@@ -136,38 +143,40 @@ export const SkillTreePanel: React.FC = () => {
                             <div
                               key={skill.id}
                               className={`
-                                relative p-4 rounded-lg border-2 cursor-pointer transition-all
+                                relative p-4 border-4 cursor-pointer transition-all
                                 ${status === 'locked' ? 'border-gray-600 bg-gray-800/50 opacity-50' : ''}
-                                ${status === 'available' ? 'border-green-500 bg-green-900/30 hover:scale-105' : ''}
-                                ${status === 'learned' ? 'border-blue-500 bg-blue-900/30' : ''}
-                                ${status === 'maxed' ? 'border-yellow-500 bg-yellow-900/30' : ''}
+                                ${status === 'available' ? 'border-green-400 bg-green-900/50 hover:border-green-300' : ''}
+                                ${status === 'learned' ? 'border-blue-400 bg-blue-900/50' : ''}
+                                ${status === 'maxed' ? 'border-yellow-400 bg-yellow-900/50' : ''}
                               `}
+                              style={{ boxShadow: '3px 3px 0 #000', imageRendering: 'pixelated' }}
                               onClick={() => setSelectedSkill(skill)}
                             >
                               {/* 技能图标 */}
                               <div className="text-4xl text-center mb-2">{skill.icon}</div>
                               
                               {/* 技能名称 */}
-                              <h4 className="text-sm font-bold text-center text-white mb-1">
+                              <h4 className="text-sm font-black text-center text-white mb-1" style={{ fontFamily: 'monospace' }}>
                                 {skill.name}
                               </h4>
                               
                               {/* 等级 */}
-                              <p className="text-xs text-center text-gray-400">
+                              <p className="text-xs text-center text-gray-300" style={{ fontFamily: 'monospace' }}>
                                 {learned 
                                   ? `Lv ${learned.currentLevel}/${skill.maxLevel}`
                                   : `消耗 ${skill.cost}点`
                                 }
                               </p>
 
-                              {/* 状态标记 */}
+                              {/* 状态标记 - 像素风格 */}
                               {status === 'maxed' && (
-                                <div className="absolute top-1 right-1 text-yellow-400 text-xs font-bold">
+                                <div className="absolute -top-2 -right-2 w-10 h-6 bg-yellow-400 border-2 border-black flex items-center justify-center text-xs font-black" 
+                                     style={{ fontFamily: 'monospace' }}>
                                   MAX
                                 </div>
                               )}
                               {status === 'locked' && (
-                                <div className="absolute top-1 right-1 text-gray-500">
+                                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gray-700 border-2 border-gray-500 flex items-center justify-center">
                                   🔒
                                 </div>
                               )}
@@ -190,74 +199,86 @@ export const SkillTreePanel: React.FC = () => {
               )}
             </div>
 
-            {/* 技能详情区域 */}
+            {/* 技能详情区域 - 像素风格 */}
             {selectedSkill && (
-              <div className="w-96 bg-gray-900/80 border-l-2 border-gray-700 p-6 overflow-y-auto">
+              <div className="w-96 bg-gray-900/90 border-l-4 border-yellow-400 p-6 overflow-y-auto">
                 <div className="space-y-4">
-                  {/* 技能头部 */}
-                  <div className="text-center">
+                  {/* 技能头部 - 像素风格 */}
+                  <div className="text-center bg-black/50 border-4 border-yellow-400 p-4" style={{ boxShadow: '4px 4px 0 #000' }}>
                     <div className="text-6xl mb-2">{selectedSkill.icon}</div>
-                    <h3 className="text-2xl font-bold text-yellow-400">{selectedSkill.name}</h3>
-                    <p className="text-gray-400 text-sm">{selectedSkill.description}</p>
+                    <h3 className="text-2xl font-black text-yellow-400" style={{ fontFamily: 'monospace', textShadow: '2px 2px 0 #000' }}>
+                      {selectedSkill.name}
+                    </h3>
+                    <p className="text-gray-300 text-sm mt-2" style={{ fontFamily: 'monospace' }}>
+                      {selectedSkill.description}
+                    </p>
                   </div>
 
-                  <div className="border-t-2 border-gray-700 my-4"></div>
+                  <div className="border-t-4 border-yellow-400/50 my-4"></div>
 
-                  {/* 技能属性 */}
-                  <div className="space-y-2">
+                  {/* 技能属性 - 像素风格 */}
+                  <div className="space-y-2 bg-gray-800/50 border-4 border-gray-700 p-4" style={{ boxShadow: '3px 3px 0 #000' }}>
                     {selectedSkill.damage && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-300">💥 伤害</span>
-                        <span className="text-red-400 font-bold">{selectedSkill.damage}</span>
+                      <div className="flex justify-between border-b-2 border-gray-700 pb-1" style={{ fontFamily: 'monospace' }}>
+                        <span className="text-gray-300 font-bold">💥 DMG</span>
+                        <span className="text-red-400 font-black">{selectedSkill.damage}</span>
                       </div>
                     )}
                     {selectedSkill.healing && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-300">💚 治疗</span>
-                        <span className="text-green-400 font-bold">{selectedSkill.healing}</span>
+                      <div className="flex justify-between border-b-2 border-gray-700 pb-1" style={{ fontFamily: 'monospace' }}>
+                        <span className="text-gray-300 font-bold">💚 HEAL</span>
+                        <span className="text-green-400 font-black">{selectedSkill.healing}</span>
                       </div>
                     )}
-                    <div className="flex justify-between">
-                      <span className="text-gray-300">💧 魔力消耗</span>
-                      <span className="text-blue-400 font-bold">{selectedSkill.manaCost}</span>
+                    <div className="flex justify-between border-b-2 border-gray-700 pb-1" style={{ fontFamily: 'monospace' }}>
+                      <span className="text-gray-300 font-bold">💧 MANA</span>
+                      <span className="text-blue-400 font-black">{selectedSkill.manaCost}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-300">⏱️ 冷却</span>
-                      <span className="text-purple-400 font-bold">{selectedSkill.cooldown}秒</span>
+                    <div className="flex justify-between border-b-2 border-gray-700 pb-1" style={{ fontFamily: 'monospace' }}>
+                      <span className="text-gray-300 font-bold">⏱️ CD</span>
+                      <span className="text-purple-400 font-black">{selectedSkill.cooldown}s</span>
                     </div>
                     {selectedSkill.range && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-300">📏 范围</span>
-                        <span className="text-yellow-400 font-bold">{selectedSkill.range}</span>
+                      <div className="flex justify-between" style={{ fontFamily: 'monospace' }}>
+                        <span className="text-gray-300 font-bold">📏 RANGE</span>
+                        <span className="text-yellow-400 font-black">{selectedSkill.range}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* 按钮 */}
+                  {/* 按钮 - 像素风格 */}
                   <div className="space-y-2 pt-4">
                     {!skillTree.learnedSkills.has(selectedSkill.id) ? (
                       <button
-                        className={`w-full px-4 py-3 rounded-lg font-bold ${
+                        className={`w-full px-4 py-3 border-4 font-black transition-all ${
                           SkillTreeSystem.canLearnSkill(selectedSkill.id)
-                            ? 'bg-green-600 hover:bg-green-500 text-white'
-                            : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                            ? 'bg-green-600 border-green-300 hover:bg-green-500 text-white active:translate-y-1'
+                            : 'bg-gray-700 border-gray-600 text-gray-500 cursor-not-allowed'
                         }`}
+                        style={{ 
+                          fontFamily: 'monospace', 
+                          boxShadow: SkillTreeSystem.canLearnSkill(selectedSkill.id) ? '4px 4px 0 #000' : '2px 2px 0 #000'
+                        }}
                         onClick={() => handleLearnSkill(selectedSkill.id)}
                         disabled={!SkillTreeSystem.canLearnSkill(selectedSkill.id)}
                       >
-                        学习 (消耗 {selectedSkill.cost} 点)
+                        ► LEARN ({selectedSkill.cost} PT)
                       </button>
                     ) : (
                       <button
-                        className={`w-full px-4 py-3 rounded-lg font-bold ${
+                        className={`w-full px-4 py-3 border-4 font-black transition-all ${
                           SkillTreeSystem.canUpgradeSkill(selectedSkill.id)
-                            ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                            : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                            ? 'bg-blue-600 border-blue-300 hover:bg-blue-500 text-white active:translate-y-1'
+                            : 'bg-gray-700 border-gray-600 text-gray-500 cursor-not-allowed'
                         }`}
+                        style={{ 
+                          fontFamily: 'monospace', 
+                          boxShadow: SkillTreeSystem.canUpgradeSkill(selectedSkill.id) ? '4px 4px 0 #000' : '2px 2px 0 #000'
+                        }}
                         onClick={() => handleUpgradeSkill(selectedSkill.id)}
                         disabled={!SkillTreeSystem.canUpgradeSkill(selectedSkill.id)}
                       >
-                        升级 (消耗 {skillTree.learnedSkills.get(selectedSkill.id)?.currentLevel || 1} 点)
+                        ▲ UPGRADE ({skillTree.learnedSkills.get(selectedSkill.id)?.currentLevel || 1} PT)
                       </button>
                     )}
                   </div>

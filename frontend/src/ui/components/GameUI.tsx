@@ -8,6 +8,7 @@ import { ClassSelectionPanel } from './ClassSelectionPanel';
 import { SkillTreePanel } from './SkillTreePanel';
 import { SkillBar } from './SkillBar';
 import { BuffBar } from './BuffBar';
+import { AttributeAllocationPanel } from './AttributeAllocationPanel';
 import { DEFAULT_KEYBINDINGS } from '@constants/keybindings';
 import { SkillManager } from '@/game/skills/SkillManager';
 import { CooldownManager } from '@/game/skills/CooldownManager';
@@ -37,6 +38,9 @@ export const GameUI: React.FC = () => {
         toggleUI('showQuestLog');
       } else if (key === DEFAULT_KEYBINDINGS.MAP) {
         toggleUI('showMap');
+      } else if (key === 'C') {
+        // C键打开属性分配面板
+        toggleUI('showAttributePanel');
       } else if (['1', '2', '3', '4'].includes(key)) {
         // 技能快捷键
         const slot = parseInt(key) - 1;
@@ -79,6 +83,21 @@ export const GameUI: React.FC = () => {
       {/* 技能树界面 */}
       {ui.showSkillTree && skillTree && (
         <SkillTreePanel />
+      )}
+      
+      {/* 属性分配面板 */}
+      {ui.showAttributePanel && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 pointer-events-auto">
+          <div className="w-full max-w-2xl mx-4">
+            <AttributeAllocationPanel />
+            <button
+              onClick={() => toggleUI('showAttributePanel')}
+              className="mt-4 w-full py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-bold"
+            >
+              关闭 (C)
+            </button>
+          </div>
+        </div>
       )}
     </>
   );

@@ -41,12 +41,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
 
     this.setCollideWorldBounds(true);
-    this.setScale(2); // 放大2倍以便看清
+    this.setScale(1); // 缩小到1倍，让角色显示大小和碰撞框匹配
     
-    // 设置碰撞体（精灵图32x32，缩放2倍后64x64，但实际可见部分很小）
+    // 设置碰撞体（精灵图32x32，实际可见部分约一半）
+    // 注意：setSize的值不受scale影响
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(12, 14); // 更小的碰撞体，匹配实际可见的角色大小
-    body.setOffset(10, 18); // 调整偏移，对齐角色脚部位置
+    body.setSize(20, 20); // 碰撞框大小（稍微大一点，更合理）
+    body.setOffset(6, 12); // 偏移量，对齐角色底部中心
     
     // 设置质量，防止被敌人推开
     body.setMass(10);
@@ -375,6 +376,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setAlpha(1);
     this.setAngle(0);
     this.clearTint();
+    
+    // 关键：恢复血量和魔力到最大值
+    this.health = this.maxHealth;
+    this.mana = this.maxMana;
+    
+    console.log(`✅ 玩家复活：HP ${this.health}/${this.maxHealth}, MP ${this.mana}/${this.maxMana}`);
   }
 
   // Getters

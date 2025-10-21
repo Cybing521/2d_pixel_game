@@ -9,6 +9,7 @@ import { LoadingProgress } from './LoadingProgress';
 
 export const HUD: React.FC = () => {
   const player = useGameStore((state) => state.player);
+  const progress = useGameStore((state) => state.progress);
 
   return (
     <div className="fixed inset-0 pointer-events-none" style={{ imageRendering: 'pixelated' }}>
@@ -58,13 +59,13 @@ export const HUD: React.FC = () => {
                 LV.{player.level}
               </span>
               <span className="text-yellow-300 text-xs" style={{ fontFamily: 'monospace' }}>
-                {player.exp}/{player.expToNextLevel}
+                {progress.exp}/{progress.expToNextLevel}
               </span>
             </div>
             <div className="w-48 h-3 bg-gray-800 border-2 border-gray-600">
               <div
                 className="h-full bg-yellow-600"
-                style={{ width: `${(player.exp / player.expToNextLevel) * 100}%` }}
+                style={{ width: `${(progress.exp / progress.expToNextLevel) * 100}%` }}
               />
             </div>
           </div>
@@ -77,7 +78,7 @@ export const HUD: React.FC = () => {
           <div className="text-xs text-gray-300 space-y-1" style={{ fontFamily: 'monospace' }}>
             <div><span className="inline-block w-6 h-6 bg-gray-700 border border-white text-center leading-6">I</span> BAG</div>
             <div><span className="inline-block w-6 h-6 bg-gray-700 border border-white text-center leading-6">K</span> SKILL</div>
-            <div><span className="inline-block w-6 h-6 bg-gray-700 border border-white text-center leading-6">J</span> QUEST</div>
+            <div><span className="inline-block w-6 h-6 bg-gray-700 border border-white text-center leading-6">C</span> ATTR</div>
             <div><span className="inline-block w-6 h-6 bg-gray-700 border border-white text-center leading-6">M</span> MAP</div>
           </div>
         </div>

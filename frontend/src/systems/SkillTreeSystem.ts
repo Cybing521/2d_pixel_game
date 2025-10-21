@@ -2,6 +2,9 @@
 import { useGameStore } from '@store/gameStore';
 import type { ClassType, ElementType, Skill, ElementMastery } from '@/types/skills';
 import { getAllWarriorSkills } from '@/data/skills/warriorSkills';
+import { getAllMageSkills } from '@/data/skills/mageSkills';
+import { getAllRogueSkills } from '@/data/skills/rogueSkills';
+import { getAllPriestSkills } from '@/data/skills/priestSkills';
 import { calculateMasteryBonuses, calculateMasteryExpRequired } from '@/data/elements';
 
 export class SkillTreeSystem {
@@ -318,13 +321,10 @@ export class SkillTreeSystem {
       case 'warrior':
         return getAllWarriorSkills();
       case 'mage':
-        const { getAllMageSkills } = require('@/data/skills/mageSkills');
         return getAllMageSkills();
       case 'rogue':
-        const { getAllRogueSkills } = require('@/data/skills/rogueSkills');
         return getAllRogueSkills();
       case 'priest':
-        const { getAllPriestSkills } = require('@/data/skills/priestSkills');
         return getAllPriestSkills();
       default:
         return [];

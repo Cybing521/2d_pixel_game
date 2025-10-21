@@ -14,8 +14,7 @@ export const UnallocatedPointsIndicator: React.FC = () => {
     <div 
       className="fixed top-24 right-4 z-40 cursor-pointer hover:scale-110 transition-transform"
       onClick={() => {
-        // TODO: 打开角色面板
-        console.log('打开角色面板分配属性');
+        toggleUI('showAttributePanel');
       }}
       title={`你有${unallocatedPoints}点属性未分配，点击分配`}
     >

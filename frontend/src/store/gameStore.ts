@@ -95,6 +95,7 @@ interface GameState {
     showQuestLog: boolean;
     showMap: boolean;
     showTrajectory: boolean;
+    showAttributePanel: boolean;
   };
   
   // Actions
@@ -214,7 +215,8 @@ export const useGameStore = create<GameState>()(
       showSkillTree: false,
       showQuestLog: false,
       showMap: false,
-      showTrajectory: true,
+      showTrajectory: false,
+      showAttributePanel: false,
     },
     
     startGame: () => set((state) => {

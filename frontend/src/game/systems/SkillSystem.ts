@@ -1,22 +1,33 @@
-// 技能释放系统 - 基础版本
+// 技能释放系统 - 模块化版本
 import Phaser from 'phaser';
-
-export interface Skill {
-  id: string;
-  name: string;
-  manaCost: number;
-  cooldown: number;
-  damage?: number;
-  radius?: number;
-  effectType?: 'projectile' | 'area' | 'self';
-}
+import type { Skill, ElementType } from '@/types/skills';
+import { ProjectileEffect } from './effects/ProjectileEffect';
+import { AreaEffect } from './effects/AreaEffect';
+import { SelfEffect } from './effects/SelfEffect';
 
 export class SkillSystem {
   private scene: Phaser.Scene;
   private skillCooldowns: Map<string, number> = new Map();
+  private activeSkills: Set<string> = new Set();
+  
+  // 特效处理器
+  private projectileEffect: ProjectileEffect;
+  private areaEffect: AreaEffect;
+  private selfEffect: SelfEffect;
+  
+  private elementColors: Map<ElementType | null, number> = new Map([
+    ['fire', 0xff4444],
+    ['water', 0x4444ff],
+    ['wind', 0x88ff88],
+    ['earth', 0xaa6633],
+    [null, 0xffffff],
+  ]);
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
+    this.projectileEffect = new ProjectileEffect(scene);
+    this.areaEffect = new AreaEffect(scene);
+    this.selfEffect = new SelfEffect(scene);
   }
 
   /**
@@ -43,121 +54,110 @@ export class SkillSystem {
    */
   castSkill(
     skill: Skill,
-    caster: Phaser.GameObjects.GameObject,
+    caster: any,
     target: { x: number; y: number }
   ): boolean {
     // 记录冷却时间
     this.skillCooldowns.set(skill.id, this.scene.time.now);
+    this.activeSkills.add(skill.id);
 
-    // 根据技能类型创建效果
-    switch (skill.effectType) {
-      case 'projectile':
-        this.createProjectile(caster, target, skill);
-        break;
-      case 'area':
-        this.createAreaEffect(target, skill);
-        break;
-      case 'self':
-        this.createSelfEffect(caster, skill);
-        break;
-    }
+    // 显示技能名称
+    this.showSkillName(caster, skill.name, skill.elementType);
+
+    // 根据技能ID调用对应的特效
+    this.castSkillEffect(skill, caster, target);
+
+    // 触发技能事件
+    this.scene.events.emit('skill-cast', {
+      skill,
+      caster,
+      target,
+    });
 
     return true;
   }
 
   /**
-   * 创建弹道技能
+   * 根据技能类型调用对应特效
    */
-  private createProjectile(
-    caster: any,
-    target: { x: number; y: number },
-    skill: Skill
-  ): void {
-    // 创建一个简单的弹道
-    const projectile = this.scene.add.circle(caster.x, caster.y, 8, 0xff4444);
-    this.scene.physics.add.existing(projectile);
+  private castSkillEffect(skill: Skill, caster: any, target: { x: number; y: number }): void {
+    const skillId = skill.id;
+    const color = this.elementColors.get(skill.elementType || null) || 0xffffff;
 
-    // 计算方向
-    const angle = Phaser.Math.Angle.Between(caster.x, caster.y, target.x, target.y);
-    const speed = 400;
-
-    (projectile.body as Phaser.Physics.Arcade.Body).setVelocity(
-      Math.cos(angle) * speed,
-      Math.sin(angle) * speed
-    );
-
-    // 自动销毁
-    this.scene.time.delayedCall(3000, () => {
-      projectile.destroy();
-    });
-
-    // 发射技能命中事件
-    this.scene.events.emit('skill-projectile-created', {
-      projectile,
-      skill,
-      caster,
-    });
+    // 火元素技能
+    if (skillId === 'fireball') {
+      this.projectileEffect.createFireball(caster, target, skill);
+    } else if (skillId === 'fire_wall') {
+      this.areaEffect.createFireWall(target, skill);
+    } else if (skillId === 'flame_storm' || skillId === 'explosion') {
+      this.areaEffect.createExplosion(target, skill, color);
+    }
+    // 水元素技能
+    else if (skillId === 'heal') {
+      this.selfEffect.createHeal(caster, skill);
+    } else if (skillId === 'water_shield') {
+      this.selfEffect.createShield(caster, skill);
+    } else if (skillId === 'ice_arrow') {
+      this.projectileEffect.createIceArrow(caster, target, skill);
+    }
+    // 风元素技能
+    else if (skillId === 'wind_blade') {
+      this.projectileEffect.createWindBlade(caster, target, skill);
+    } else if (skillId === 'tornado') {
+      this.areaEffect.createTornado(target, skill);
+    } else if (skillId === 'wind_blessing') {
+      this.selfEffect.createWindBlessing(caster, skill);
+    }
+    // 土元素技能
+    else if (skillId === 'rock_armor') {
+      this.selfEffect.createRockArmor(caster, skill);
+    } else if (skillId === 'earth_spike') {
+      this.areaEffect.createEarthSpike(target, skill);
+    }
+    // 默认弹道
+    else {
+      this.projectileEffect.create(caster, target, skill, color);
+    }
   }
 
   /**
-   * 创建范围技能
+   * 显示技能名称
    */
-  private createAreaEffect(target: { x: number; y: number }, skill: Skill): void {
-    const radius = skill.radius || 50;
-
-    // 创建范围指示圈
-    const circle = this.scene.add.circle(target.x, target.y, radius, 0xff0000, 0.3);
-    
-    // 爆炸动画
-    this.scene.tweens.add({
-      targets: circle,
-      scale: { from: 0.5, to: 1.2 },
-      alpha: { from: 0.6, to: 0 },
-      duration: 400,
-      onComplete: () => {
-        circle.destroy();
-      },
+  private showSkillName(caster: any, name: string, element?: ElementType | null): void {
+    const color = this.elementColors.get(element || null) || 0xffffff;
+    const text = this.scene.add.text(caster.x, caster.y - 50, name, {
+      fontSize: '14px',
+      color: '#' + color.toString(16).padStart(6, '0'),
+      fontFamily: 'monospace',
+      stroke: '#000',
+      strokeThickness: 3,
     });
-
-    // 发射范围伤害事件
-    this.scene.events.emit('skill-area-damage', {
-      x: target.x,
-      y: target.y,
-      radius,
-      damage: skill.damage,
-    });
-  }
-
-  /**
-   * 创建自身增益技能
-   */
-  private createSelfEffect(caster: any, skill: Skill): void {
-    // 创建光环效果
-    const aura = this.scene.add.circle(caster.x, caster.y, 30, 0x00ff00, 0.3);
+    text.setOrigin(0.5);
+    text.setDepth(1000);
 
     this.scene.tweens.add({
-      targets: aura,
-      scale: { from: 0.8, to: 1.5 },
-      alpha: { from: 0.6, to: 0 },
-      duration: 500,
-      onComplete: () => {
-        aura.destroy();
-      },
-    });
-
-    // 发射自身增益事件
-    this.scene.events.emit('skill-self-buff', {
-      caster,
-      skill,
+      targets: text,
+      y: caster.y - 80,
+      alpha: 0,
+      duration: 1000,
+      onComplete: () => text.destroy(),
     });
   }
 
   /**
-   * 获取技能剩余冷却时间
+   * 获取技能剩余冷却时间（毫秒）
    */
-  getRemainingCooldown(skill: Skill): number {
-    const lastCast = this.skillCooldowns.get(skill.id) || 0;
-    const remaining = skill.cooldown - (this.scene.time.now - lastCast);
+  getRemainingCooldown(skillId: string, cooldown: number): number {
+    const lastCast = this.skillCooldowns.get(skillId) || 0;
+    const remaining = cooldown - (this.scene.time.now - lastCast);
     return Math.max(0, remaining);
+  }
+
+  /**
+   * 获取技能冷却进度（0-1）
+   */
+  getCooldownProgress(skillId: string, cooldown: number): number {
+    const remaining = this.getRemainingCooldown(skillId, cooldown);
+    return 1 - (remaining / cooldown);
   }
 }

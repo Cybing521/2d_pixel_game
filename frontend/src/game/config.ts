@@ -7,7 +7,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   width: GAME_CONFIG.WIDTH,
   height: GAME_CONFIG.HEIGHT,
   parent: 'game-container',
-  backgroundColor: '#2d2d2d',
+  backgroundColor: '#4a1a4a', // 深紫色背景，匹配像素艺术风格
   pixelArt: true, // 关键：像素游戏必须开启
   antialias: false,
   roundPixels: true,

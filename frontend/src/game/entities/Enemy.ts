@@ -61,12 +61,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     
     this.setCollideWorldBounds(true);
-    this.setScale(2);
+    this.setScale(1); // 缩小到1倍，让敌人显示大小和碰撞框匹配
     
     // 设置碰撞体（史莱姆实际可见部分很小）
+    // 注意：setSize的值不受scale影响
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(12, 14); // 更小的碰撞体，匹配实际可见的史莱姆大小
-    body.setOffset(10, 18); // 调整偏移，对齐底部
+    body.setSize(20, 20); // 碰撞框大小（与玩家一致）
+    body.setOffset(6, 12); // 偏移量，使碰撞框对齐精灵底部中心
     
     // 设置较小的质量，使敌人更容易被推开
     body.setMass(3);
