@@ -5,6 +5,11 @@ export const GAME_CONFIG = {
   HEIGHT: 900,
   TILE_SIZE: 16,
   ZOOM: 1.5,   // 调整缩放以匹配新分辨率
+  
+  // 大地图配置（10倍世界）
+  WORLD_WIDTH: 10000,  // 原本1000，现在10000
+  WORLD_HEIGHT: 10000,
+  CHUNK_SIZE: 1024,    // 每个chunk大小
 } as const;
 
 export const PLAYER_CONFIG = {

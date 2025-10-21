@@ -71,6 +71,16 @@ export class BootScene extends Phaser.Scene {
     this.load.image('hero-north-west', '/assets/sprites/hero/north-west.png');
     this.load.image('hero-south-west', '/assets/sprites/hero/south-west.png');
     
+    // ========== Chibi英雄角色（8方向）- 新！==========
+    this.load.image('chibi-hero-south', '/assets/sprites/chibi_hero/south.png');
+    this.load.image('chibi-hero-west', '/assets/sprites/chibi_hero/west.png');
+    this.load.image('chibi-hero-east', '/assets/sprites/chibi_hero/east.png');
+    this.load.image('chibi-hero-north', '/assets/sprites/chibi_hero/north.png');
+    this.load.image('chibi-hero-south-east', '/assets/sprites/chibi_hero/south-east.png');
+    this.load.image('chibi-hero-north-east', '/assets/sprites/chibi_hero/north-east.png');
+    this.load.image('chibi-hero-north-west', '/assets/sprites/chibi_hero/north-west.png');
+    this.load.image('chibi-hero-south-west', '/assets/sprites/chibi_hero/south-west.png');
+    
     // ========== 史莱姆敌人（8方向）==========
     this.load.image('slime-south', '/assets/sprites/slime/south.png');
     this.load.image('slime-west', '/assets/sprites/slime/west.png');
@@ -81,22 +91,25 @@ export class BootScene extends Phaser.Scene {
     this.load.image('slime-north-west', '/assets/sprites/slime/north-west.png');
     this.load.image('slime-south-west', '/assets/sprites/slime/south-west.png');
     
-    // ========== 保留临时哥布林敌人 ==========
-    const goblinCanvas = this.textures.createCanvas('enemy-goblin', 32, 32);
-    if (goblinCanvas) {
-      const ctx = goblinCanvas.getContext();
-      ctx.fillStyle = '#7f8c8d';
-      ctx.fillRect(8, 12, 16, 16);
-      ctx.fillStyle = '#95a5a6';
-      ctx.fillRect(10, 6, 12, 10);
-      ctx.fillStyle = '#e74c3c';
-      ctx.fillRect(12, 9, 3, 2);
-      ctx.fillRect(17, 9, 3, 2);
-      ctx.fillStyle = '#34495e';
-      ctx.fillRect(4, 14, 4, 8);
-      ctx.fillRect(24, 14, 4, 8);
-      goblinCanvas.refresh();
-    }
+    // ========== 骷髅战士敌人（8方向）- 新！==========
+    this.load.image('skeleton-south', '/assets/sprites/skeleton/south.png');
+    this.load.image('skeleton-west', '/assets/sprites/skeleton/west.png');
+    this.load.image('skeleton-east', '/assets/sprites/skeleton/east.png');
+    this.load.image('skeleton-north', '/assets/sprites/skeleton/north.png');
+    this.load.image('skeleton-south-east', '/assets/sprites/skeleton/south-east.png');
+    this.load.image('skeleton-north-east', '/assets/sprites/skeleton/north-east.png');
+    this.load.image('skeleton-north-west', '/assets/sprites/skeleton/north-west.png');
+    this.load.image('skeleton-south-west', '/assets/sprites/skeleton/south-west.png');
+    
+    // ========== 哥布林敌人（8方向）- 新！==========
+    this.load.image('goblin-south', '/assets/sprites/goblin/south.png');
+    this.load.image('goblin-west', '/assets/sprites/goblin/west.png');
+    this.load.image('goblin-east', '/assets/sprites/goblin/east.png');
+    this.load.image('goblin-north', '/assets/sprites/goblin/north.png');
+    this.load.image('goblin-south-east', '/assets/sprites/goblin/south-east.png');
+    this.load.image('goblin-north-east', '/assets/sprites/goblin/north-east.png');
+    this.load.image('goblin-north-west', '/assets/sprites/goblin/north-west.png');
+    this.load.image('goblin-south-west', '/assets/sprites/goblin/south-west.png');
     
     // ========== 草地贴图（带纹理）==========
     const grassCanvas = this.textures.createCanvas('ground', 64, 64);
@@ -242,12 +255,12 @@ export class BootScene extends Phaser.Scene {
       heartCanvas.refresh();
     }
     
-    console.log('✅ 真实像素艺术角色已加载');
-    console.log('👾 英雄角色: 8方向精灵图（32x32px）');
-    console.log('🟢 史莱姆敌人: 8方向精灵图（32x32px）');
+    console.log('✅ 真实像素艺术角色已加载 (Chibi风格)');
+    console.log('👾 英雄角色: hero + chibi-hero (8方向精灵图32x32px)');
+    console.log('🟢 敌人角色: slime + skeleton + goblin (8方向精灵图32x32px)');
     console.log('🎮 支持: south, west, east, north + 4个对角方向');
-    console.log('📦 保留临时资源: 哥布林、环境、道具');
-    console.log('💡 提示: 角色已支持8方向移动，可根据速度向量自动切换方向');
+    console.log('🎨 风格: 头大腿短的Chibi像素风格');
+    console.log('💡 提示: 所有角色支持8方向移动，自动切换朝向');
   }
 
   create() {

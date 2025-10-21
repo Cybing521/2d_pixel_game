@@ -19,7 +19,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private patrolPoints: Phaser.Math.Vector2[] = [];
   private currentPatrolIndex: number = 0;
   private detectionRange: number = 150; // 检测范围
-  private attackRange: number = 30; // 攻击范围
+  private attackRange: number = 30; // 攻击范围（匹配更小的碰撞体）
   
   // 攻击冷却
   private lastAttackTime: number = 0;
@@ -27,8 +27,26 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   constructor(scene: Phaser.Scene, x: number, y: number, enemyData: EnemyData) {
     // 根据敌人ID确定精灵前缀
-    const spritePrefix = enemyData.id === 'slime' ? 'slime' : 'enemy-goblin';
-    const initialTexture = enemyData.id === 'slime' ? 'slime-south' : 'enemy-goblin';
+    let spritePrefix: string;
+    let initialTexture: string;
+    
+    switch (enemyData.id) {
+      case 'slime':
+        spritePrefix = 'slime';
+        initialTexture = 'slime-south';
+        break;
+      case 'skeleton':
+        spritePrefix = 'skeleton';
+        initialTexture = 'skeleton-south';
+        break;
+      case 'goblin':
+        spritePrefix = 'goblin';
+        initialTexture = 'goblin-south';
+        break;
+      default:
+        spritePrefix = 'slime';
+        initialTexture = 'slime-south';
+    }
     
     super(scene, x, y, initialTexture);
     
@@ -44,6 +62,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     
     this.setCollideWorldBounds(true);
     this.setScale(2);
+    
+    // 设置碰撞体（史莱姆实际可见部分很小）
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setSize(12, 14); // 更小的碰撞体，匹配实际可见的史莱姆大小
+    body.setOffset(10, 18); // 调整偏移，对齐底部
+    
+    // 设置较小的质量，使敌人更容易被推开
+    body.setMass(3);
+    body.setImmovable(false);
     
     // 设置巡逻路径
     if (this.aiType === 'patrol') {

@@ -16,7 +16,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   // 方向控制（8方向）
   private currentDirection: Direction8 = 'south'; // 默认朝向南方（下方）
-  private spritePrefix: string = 'hero';
+  private spritePrefix: string = 'chibi-hero'; // 使用chibi风格英雄
 
   // 输入控制
   private keys!: {
@@ -28,20 +28,29 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   };
   
   // 攻击相关
-  private attackRange: number = 40;
+  private attackRange: number = 35; // 攻击范围（匹配更小的碰撞体）
   private attackDamage: number = 15;
   private lastAttackTime: number = 0;
   private attackCooldown: number = 500; // 0.5秒攻击间隔
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    // 使用英雄角色的南向精灵图作为默认
-    super(scene, x, y, 'hero-south');
+    // 使用Chibi英雄角色的南向精灵图作为默认
+    super(scene, x, y, 'chibi-hero-south');
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
     this.setCollideWorldBounds(true);
     this.setScale(2); // 放大2倍以便看清
+    
+    // 设置碰撞体（精灵图32x32，缩放2倍后64x64，但实际可见部分很小）
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setSize(12, 14); // 更小的碰撞体，匹配实际可见的角色大小
+    body.setOffset(10, 18); // 调整偏移，对齐角色脚部位置
+    
+    // 设置质量，防止被敌人推开
+    body.setMass(10);
+    body.setImmovable(false); // 允许移动但有惯性
     
     this.setupInput();
     
@@ -151,6 +160,75 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   gainExp(amount: number) {
     this.exp += amount;
     // TODO: 检查升级
+  }
+
+  /**
+   * 显示升级效果 - 头顶像素风格文字
+   */
+  showLevelUp(newLevel: number) {
+    // 创建像素风格的LEVEL UP文字
+    const levelUpText = this.scene.add.text(
+      this.x, 
+      this.y - 60, 
+      '★ LEVEL UP ★',
+      {
+        fontSize: '24px',
+        color: '#FFD700',
+        fontStyle: 'bold',
+        fontFamily: 'monospace',
+        stroke: '#000000',
+        strokeThickness: 4,
+      }
+    );
+    levelUpText.setOrigin(0.5);
+    levelUpText.setDepth(1000);
+    
+    // 创建等级文字
+    const levelText = this.scene.add.text(
+      this.x,
+      this.y - 35,
+      `Lv.${newLevel - 1} → Lv.${newLevel}`,
+      {
+        fontSize: '16px',
+        color: '#FFFFFF',
+        fontStyle: 'bold',
+        fontFamily: 'monospace',
+        stroke: '#000000',
+        strokeThickness: 3,
+      }
+    );
+    levelText.setOrigin(0.5);
+    levelText.setDepth(1000);
+    
+    // 动画效果
+    this.scene.tweens.add({
+      targets: [levelUpText, levelText],
+      y: '-=40',
+      alpha: { from: 1, to: 0 },
+      scale: { from: 1, to: 1.5 },
+      duration: 2000,
+      ease: 'Power2',
+      onComplete: () => {
+        levelUpText.destroy();
+        levelText.destroy();
+      },
+    });
+    
+    // 升级光效
+    const particles = this.scene.add.particles(this.x, this.y, 'coin', {
+      speed: { min: 50, max: 100 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 0.5, end: 0 },
+      lifespan: 800,
+      quantity: 20,
+      blendMode: 'ADD',
+    });
+    
+    this.scene.time.delayedCall(800, () => {
+      particles.destroy();
+    });
+    
+    console.log(`🎉 玩家升级！等级：${newLevel}`);
   }
 
   private handleAttack(time: number) {

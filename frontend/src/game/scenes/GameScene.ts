@@ -4,6 +4,7 @@ import { SCENE_KEYS, GAME_CONFIG } from '@constants/gameConfig';
 import { Player } from '../entities/Player';
 import { Enemy } from '../entities/Enemy';
 import { FogSystem } from '../systems/FogSystem';
+import { ChunkManager } from '../systems/ChunkManager';
 import { useGameStore } from '@store/gameStore';
 import type { EnemyData } from '@/types/entities';
 import { LevelSystem } from '@/systems/LevelSystem';
@@ -12,8 +13,10 @@ export class GameScene extends Phaser.Scene {
   private player!: Player;
   private enemies!: Phaser.GameObjects.Group;
   private fogSystem!: FogSystem;
+  private chunkManager!: ChunkManager;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private lastExploredTile: string = '';
+  private performanceStats = { fps: 0, chunks: 0, enemies: 0 };
   private respawnPoint: { x: number; y: number } = { x: 400, y: 300 }; // 复活点
   private villages: Array<{
     id: string;
@@ -42,11 +45,15 @@ export class GameScene extends Phaser.Scene {
     // 启动UI场景（作为覆盖层）
     this.scene.launch(SCENE_KEYS.UI);
 
-    // 创建世界边界
-    this.physics.world.setBounds(0, 0, 2000, 2000);
+    // 创建世界边界（10倍大地图）
+    this.physics.world.setBounds(0, 0, GAME_CONFIG.WORLD_WIDTH, GAME_CONFIG.WORLD_HEIGHT);
 
-    // 创建简单的地面
-    this.createGround();
+    // 初始化ChunkManager（分块加载系统）
+    this.chunkManager = new ChunkManager(this, GAME_CONFIG.CHUNK_SIZE);
+    
+    // 监听chunk事件生成敌人
+    this.events.on('spawn-enemy-at', this.spawnEnemyAt, this);
+    this.events.on('unload-chunk-enemies', this.unloadChunkEnemies, this);
     
     // 初始化村庄系统
     this.initializeVillages();
@@ -81,7 +88,11 @@ export class GameScene extends Phaser.Scene {
     // 相机跟随
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
     this.cameras.main.setZoom(GAME_CONFIG.ZOOM);
-    this.cameras.main.setBounds(0, 0, 2000, 2000);
+    this.cameras.main.setBounds(0, 0, GAME_CONFIG.WORLD_WIDTH, GAME_CONFIG.WORLD_HEIGHT);
+    
+    console.log('🗺️  大地图系统已启用');
+    console.log(`📏 世界大小: ${GAME_CONFIG.WORLD_WIDTH}x${GAME_CONFIG.WORLD_HEIGHT}`);
+    console.log(`📦 Chunk大小: ${GAME_CONFIG.CHUNK_SIZE}x${GAME_CONFIG.CHUNK_SIZE}`);
 
     // 输入控制
     this.cursors = this.input.keyboard!.createCursorKeys();
@@ -446,6 +457,77 @@ export class GameScene extends Phaser.Scene {
     }
   }
   
+  /**
+   * 在指定位置生成敌人（用于Chunk系统）
+   */
+  private spawnEnemyAt(x: number, y: number) {
+    // 敌人类型模板（简化版）
+    const enemyTemplates = [
+      {
+        id: 'slime',
+        name: '史莱姆',
+        health: 50,
+        attack: 8,
+        speed: 60,
+        aiType: 'patrol' as const,
+        expReward: 15,
+        dropTable: [],
+      },
+      {
+        id: 'skeleton',
+        name: '骷髅战士',
+        health: 100,
+        attack: 15,
+        speed: 80,
+        aiType: 'aggressive' as const,
+        expReward: 25,
+        dropTable: [],
+      },
+      {
+        id: 'goblin',
+        name: '哥布林',
+        health: 60,
+        attack: 10,
+        speed: 100,
+        aiType: 'patrol' as const,
+        expReward: 18,
+        dropTable: [],
+      },
+    ];
+    
+    // 随机选择敌人类型
+    const template = Phaser.Utils.Array.GetRandom(enemyTemplates);
+    
+    const enemyData: EnemyData = {
+      id: template.id,
+      name: template.name,
+      type: 'basic',
+      health: template.health,
+      maxHealth: template.health,
+      attack: template.attack,
+      defense: 2,
+      speed: template.speed,
+      aiType: template.aiType,
+      expReward: template.expReward,
+      dropTable: template.dropTable,
+    };
+    
+    const enemy = new Enemy(this, x, y, enemyData);
+    this.enemies.add(enemy);
+    
+    // 设置碰撞
+    this.physics.add.collider(this.player, enemy);
+  }
+  
+  /**
+   * 卸载chunk时移除该chunk的敌人
+   */
+  private unloadChunkEnemies(chunkKey: string) {
+    // 暂时不做特殊处理，让敌人自然存在
+    // 后续可以根据chunk添加标记来清理远离的敌人
+    console.log(`🗑️  Chunk ${chunkKey} 敌人处理（保留）`);
+  }
+  
   private isInVillage(x: number, y: number): { inVillage: boolean; villageId?: string } {
     for (const village of this.villages) {
       if (!village.unlocked) continue;
@@ -595,6 +677,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number) {
+    // 更新ChunkManager（分块加载系统）
+    this.chunkManager.update(this.player.x, this.player.y);
+    
+    // 更新性能统计
+    this.performanceStats.fps = Math.round(this.game.loop.actualFps);
+    this.performanceStats.chunks = this.chunkManager.getLoadedChunkCount();
+    this.performanceStats.enemies = this.enemies.getLength();
+    
     // 更新玩家
     this.player.update(time, delta);
     

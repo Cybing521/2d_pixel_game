@@ -15,7 +15,10 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     default: 'arcade',
     arcade: {
       gravity: { x: 0, y: 0 }, // 俯视角无重力
-      debug: false, // 生产环境关闭debug
+      debug: true, // 开启debug模式，显示碰撞体边界
+      debugShowBody: true,
+      debugShowStaticBody: true,
+      debugShowVelocity: true,
     },
   },
   scale: {

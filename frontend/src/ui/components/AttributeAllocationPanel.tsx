@@ -64,24 +64,33 @@ export const AttributeAllocationPanel: React.FC = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-6 border-2 border-yellow-600 shadow-xl">
-      {/* 标题 */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">📊</span>
-          <h3 className="text-xl font-bold text-yellow-400">属性分配</h3>
+    <div className="relative bg-black p-1" style={{ imageRendering: 'pixelated' }}>
+      {/* 像素风格外边框 */}
+      <div className="absolute inset-0 border-4 border-yellow-400" 
+           style={{ boxShadow: 'inset 0 0 0 2px #000, 0 6px 0 #ca8a04' }} />
+      
+      <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 p-4">
+        {/* 标题 - 像素风格 */}
+        <div className="flex items-center justify-between mb-4 pb-3 border-b-4 border-yellow-400">
+          <h3 className="text-2xl font-black text-yellow-400" 
+              style={{ 
+                fontFamily: 'monospace', 
+                textShadow: '2px 2px 0 #000'
+              }}>
+            ◆ STAT BOOST ◆
+          </h3>
+          <div className="bg-red-600 border-2 border-white px-3 py-1 text-white font-bold" 
+               style={{ fontFamily: 'monospace', boxShadow: '2px 2px 0 #000' }}>
+            POINTS: {progress.unallocatedPoints}
+          </div>
         </div>
-        <div className="bg-yellow-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-          剩余: {progress.unallocatedPoints} 点
-        </div>
-      </div>
 
-      {/* 提示 */}
-      <div className="bg-blue-900/30 border border-blue-700 rounded p-3 mb-4">
-        <p className="text-blue-300 text-sm">
-          💡 选择一项属性进行提升，属性将立即生效且不可撤销
-        </p>
-      </div>
+        {/* 提示 - 像素风格 */}
+        <div className="bg-blue-900 border-2 border-blue-400 p-2 mb-4">
+          <p className="text-blue-200 text-sm" style={{ fontFamily: 'monospace' }}>
+            ► Select to boost (Permanent!)
+          </p>
+        </div>
 
       {/* 选项列表 */}
       <div className="space-y-3 mb-4">
@@ -92,52 +101,53 @@ export const AttributeAllocationPanel: React.FC = () => {
           
           // 根据类型设置颜色
           const typeColors = {
-            basic: 'from-blue-600 to-blue-800 border-blue-400',
-            special: 'from-purple-600 to-purple-800 border-purple-400',
-            advanced: 'from-yellow-600 to-orange-700 border-yellow-400',
+            basic: { bg: 'bg-blue-700', border: 'border-blue-300', text: 'text-blue-200' },
+            special: { bg: 'bg-purple-700', border: 'border-purple-300', text: 'text-purple-200' },
+            advanced: { bg: 'bg-orange-600', border: 'border-yellow-300', text: 'text-yellow-200' },
           };
+          const colors = typeColors[option.type];
 
           return (
             <div
               key={option.id}
               onClick={() => handleSelect(option)}
               className={`
-                relative bg-gradient-to-r ${typeColors[option.type]}
-                border-2 rounded-lg p-4 cursor-pointer transition-all
+                relative ${colors.bg} border-4 ${colors.border} p-3 cursor-pointer transition-all
                 ${isSelected 
-                  ? 'scale-105 shadow-2xl ring-4 ring-yellow-400' 
-                  : 'hover:scale-102 hover:shadow-xl'}
+                  ? 'border-white shadow-lg' 
+                  : 'hover:border-yellow-200'}
               `}
+              style={{ imageRendering: 'pixelated', boxShadow: isSelected ? '4px 4px 0 #000' : '2px 2px 0 #000' }}
             >
               {/* 选中标记 */}
               {isSelected && (
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center text-xl border-2 border-white shadow-lg">
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 border-2 border-black flex items-center justify-center text-sm font-bold">
                   ✓
                 </div>
               )}
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 {/* 图标 */}
-                <div className="text-4xl">{option.icon}</div>
+                <div className="text-3xl">{option.icon}</div>
 
                 {/* 信息 */}
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg font-bold text-white">
+                    <span className="text-base font-bold text-white" style={{ fontFamily: 'monospace' }}>
                       {option.displayName}
                     </span>
-                    <span className="text-sm bg-white/20 px-2 py-0.5 rounded">
-                      {option.type === 'basic' && '基础'}
-                      {option.type === 'special' && '特殊'}
-                      {option.type === 'advanced' && '高级'}
+                    <span className="text-xs bg-black/50 border border-white px-1" style={{ fontFamily: 'monospace' }}>
+                      {option.type === 'basic' && 'BSC'}
+                      {option.type === 'special' && 'SPC'}
+                      {option.type === 'advanced' && 'ADV'}
                     </span>
                   </div>
                   
-                  <div className="text-sm text-gray-200 mb-2">
+                  <div className="text-xs ${colors.text} mb-1" style={{ fontFamily: 'monospace' }}>
                     {option.description}
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-3 text-xs" style={{ fontFamily: 'monospace' }}>
                     <div className="text-green-300 font-bold">
                       +{option.value}
                       {['critRate', 'critDamage', 'cooldownReduction', 'expBonus', 
@@ -155,19 +165,25 @@ export const AttributeAllocationPanel: React.FC = () => {
         })}
       </div>
 
-      {/* 确认按钮 */}
-      <button
-        onClick={handleConfirm}
-        disabled={!selectedOption}
-        className={`
-          w-full py-3 rounded-lg font-bold text-lg transition-all
-          ${selectedOption
-            ? 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white hover:from-yellow-400 hover:to-orange-500 shadow-lg hover:shadow-xl'
-            : 'bg-gray-700 text-gray-500 cursor-not-allowed'}
-        `}
-      >
-        {selectedOption ? `确认提升 ${selectedOption.displayName}` : '请选择一个属性'}
-      </button>
+        {/* 确认按钮 - 像素风格 */}
+        <button
+          onClick={handleConfirm}
+          disabled={!selectedOption}
+          className={`
+            w-full py-3 border-4 font-bold text-lg transition-all
+            ${selectedOption
+              ? 'bg-green-600 border-green-300 text-white hover:bg-green-500 active:translate-y-1'
+              : 'bg-gray-600 border-gray-500 text-gray-400 cursor-not-allowed'}
+          `}
+          style={{ 
+            fontFamily: 'monospace',
+            boxShadow: selectedOption ? '4px 4px 0 #000' : '2px 2px 0 #000',
+            imageRendering: 'pixelated'
+          }}
+        >
+          {selectedOption ? `► CONFIRM: ${selectedOption.displayName}` : '► SELECT STAT FIRST'}
+        </button>
+      </div>
     </div>
   );
 };
